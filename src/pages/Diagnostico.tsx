@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, Trophy, Zap, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Search, Trophy, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- BANCO DE DADOS DAS PERGUNTAS ---
