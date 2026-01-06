@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Trophy, Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
+  Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, ShieldCheck, PlayCircle, 
   TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
-  BarChart3, Target
+  BarChart3
 } from 'lucide-react';
 
 function Resultado() {
@@ -46,13 +46,13 @@ function Resultado() {
 
     // Normalização 0-100
     let finalScore = Math.min(points, 100);
-    if (finalScore < 30) finalScore = 42; // Nota de incentivo mínima
+    if (finalScore < 30) finalScore = 42; 
 
     // Definição de Tier
     let tier: 'HOT' | 'WARM' | 'COLD' = 'COLD';
-    if (points >= 70) tier = 'HOT';       // Concessionária Grande / Investidor
-    else if (points >= 40) tier = 'WARM'; // Revenda Média
-    else tier = 'COLD';                   // Iniciante
+    if (points >= 70) tier = 'HOT';
+    else if (points >= 40) tier = 'WARM';
+    else tier = 'COLD';
 
     return { score: finalScore, tier };
   };
@@ -64,7 +64,6 @@ function Resultado() {
     const result = calculateMetrics();
     setQualification(result.tier);
     
-    // Simulação de envio para n8n/CRM
     console.log("LEAD CAPTURADO:", { ...formData, answers, qualification: result.tier });
     
     setStep('loading');
@@ -88,7 +87,6 @@ function Resultado() {
     }, 10);
   };
 
-  // --- CONTEÚDO DINÂMICO (VSL vs WHATSAPP) ---
   const getContent = () => {
     if (qualification === 'HOT') return {
       tag: "PERFIL LÍDER",
@@ -102,7 +100,6 @@ function Resultado() {
       isVsl: false
     };
     
-    // WARM ou COLD
     return {
       tag: "EM DESENVOLVIMENTO",
       tagColor: "bg-autoforce-yellow text-autoforce-dark",
@@ -110,7 +107,7 @@ function Resultado() {
       msg: "Você tem potencial, mas processos manuais estão travando seu crescimento. Você precisa estruturar a base antes de acelerar.",
       ctaTitle: "Assistir Aula de Estruturação",
       ctaSub: "Vídeo Gratuito (15 min)",
-      ctaLink: "https://lp.autoforce.com/aula-gestao-leads", // Link da sua VSL
+      ctaLink: "https://lp.autoforce.com/aula-gestao-leads",
       ctaIcon: PlayCircle,
       isVsl: true
     };
@@ -118,7 +115,6 @@ function Resultado() {
 
   const content = getContent();
 
-  // Helpers de Exibição
   const getInvestimentoLabel = () => {
     const map: any = { 'ate-3k': 'Até R$ 3k', '3-10k': 'R$ 3-10k', '10-30k': 'R$ 10-30k', '30-70k': 'R$ 30-70k', '70k+': 'R$ 70k+' };
     return map[answers.investimento_ads] || 'Não informado';
@@ -132,12 +128,10 @@ function Resultado() {
   return (
     <div className="min-h-screen bg-autoforce-dark text-white font-sans flex flex-col items-center justify-center p-4 md:p-8">
       
-      {/* Luz de Fundo */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-autoforce-blue/10 blur-[120px] rounded-full"></div>
       </div>
 
-      {/* --- ETAPA 1: LOCK (Formulário) --- */}
       {step === 'locked' && (
         <div className="relative z-10 w-full max-w-lg animate-fade-in my-8">
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
@@ -152,33 +146,51 @@ function Resultado() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="group">
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nome completo *</label>
-                <input required type="text" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input required type="text" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                </div>
               </div>
               
               <div className="group">
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Cargo *</label>
-                <input required type="text" placeholder="Ex: Diretor Comercial" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input required type="text" placeholder="Ex: Diretor Comercial" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="group">
                   <label className="text-xs font-bold text-gray-500 uppercase ml-1">WhatsApp *</label>
-                  <input required type="tel" placeholder="(11) 99999-9999" value={formData.phone} onChange={handlePhoneChange} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input required type="tel" maxLength={15} placeholder="(11) 99999-9999" value={formData.phone} onChange={handlePhoneChange} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  </div>
                 </div>
                 <div className="group">
                   <label className="text-xs font-bold text-gray-500 uppercase ml-1">CNPJ *</label>
-                  <input required type="text" placeholder="00.000..." value={formData.cnpj} onChange={handleCnpjChange} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input required type="text" maxLength={18} placeholder="00.000..." value={formData.cnpj} onChange={handleCnpjChange} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  </div>
                 </div>
               </div>
 
               <div className="group">
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">E-mail corporativo *</label>
-                <input required type="email" placeholder="nome@empresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input required type="email" placeholder="nome@empresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                </div>
               </div>
 
               <div className="group">
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Site</label>
-                <input type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                </div>
               </div>
 
               <div className="pt-2">
@@ -196,7 +208,6 @@ function Resultado() {
         </div>
       )}
 
-      {/* --- ETAPA 2: LOADING --- */}
       {step === 'loading' && (
         <div className="text-center animate-pulse z-20">
           <div className="w-16 h-16 border-4 border-autoforce-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -205,11 +216,9 @@ function Resultado() {
         </div>
       )}
 
-      {/* --- ETAPA 3: DASHBOARD FINAL (Referência image_6c399c.png) --- */}
       {step === 'result' && (
         <div className="relative z-10 w-full max-w-6xl animate-slide-up pb-12">
           
-          {/* Header do Dashboard */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-autoforce-blue/10 border border-autoforce-blue/20 text-autoforce-blue text-xs font-bold uppercase tracking-wider mb-4">
               <CheckCircle2 className="w-3 h-3" /> Diagnóstico Concluído
@@ -220,9 +229,7 @@ function Resultado() {
             <p className="text-gray-400">Análise completa da maturidade digital de <span className="text-white font-bold">{formData.name.split(' ')[0]}</span></p>
           </div>
 
-          {/* GRID SUPERIOR (3 CARDS) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Card 1: Classificação */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center flex flex-col items-center justify-center">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Sua Classificação</span>
               <div className={`px-4 py-2 rounded-full text-sm font-bold uppercase mb-3 ${content.tagColor}`}>
@@ -233,7 +240,6 @@ function Resultado() {
               </p>
             </div>
 
-            {/* Card 2: Maturidade (Métricas) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 block">Métricas da Operação</span>
               <div className="grid grid-cols-2 gap-4">
@@ -248,7 +254,6 @@ function Resultado() {
               </div>
             </div>
 
-            {/* Card 3: Momento de Compra (Score) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center flex flex-col items-center justify-center relative">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Score Digital</span>
               <div className="text-6xl font-heading font-black text-white mb-1">
@@ -259,7 +264,6 @@ function Resultado() {
             </div>
           </div>
 
-          {/* ÁREA PRINCIPAL (Cinza na referência) */}
           <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-8">
             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-gray-400" />
@@ -267,7 +271,6 @@ function Resultado() {
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Item 1 */}
               <div className="bg-black/20 rounded-xl p-5 border border-white/5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-red-500/10 rounded text-red-400"><TrendingUp size={18}/></div>
@@ -277,7 +280,6 @@ function Resultado() {
                 <div className="text-xs text-gray-500 mt-1">Situação das metas</div>
               </div>
 
-              {/* Item 2 */}
               <div className="bg-black/20 rounded-xl p-5 border border-white/5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-yellow-500/10 rounded text-yellow-400"><Clock size={18}/></div>
@@ -287,7 +289,6 @@ function Resultado() {
                 <div className="text-xs text-gray-500 mt-1">SLA primeiro contato</div>
               </div>
 
-              {/* Item 3 */}
               <div className="bg-black/20 rounded-xl p-5 border border-white/5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-green-500/10 rounded text-green-400"><DollarSign size={18}/></div>
@@ -297,7 +298,6 @@ function Resultado() {
                 <div className="text-xs text-gray-500 mt-1">Mensal em tráfego pago</div>
               </div>
 
-              {/* Item 4 */}
               <div className="bg-black/20 rounded-xl p-5 border border-white/5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-purple-500/10 rounded text-purple-400"><AlertTriangle size={18}/></div>
@@ -309,7 +309,6 @@ function Resultado() {
             </div>
           </div>
 
-          {/* CTA DINÂMICO (VSL vs WHATSAPP) */}
           <div className="w-full bg-gradient-to-r from-autoforce-blue/20 to-transparent border border-autoforce-blue/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left shadow-[0_0_40px_rgba(20,64,255,0.1)]">
             <div className="flex-1">
               <h3 className="text-2xl font-heading font-bold text-white mb-2">
