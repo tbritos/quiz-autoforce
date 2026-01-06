@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, Trophy, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Search, Trophy, Zap, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- BANCO DE DADOS DAS PERGUNTAS ---
@@ -84,11 +84,11 @@ const QUESTIONS = [
       { label: "Outro", value: "other" }
     ]
   },
-  // 7. Anúncios (COM SUB-PERGUNTA INTEGRADA)
+  // 7. Anúncios
   {
-    id: 'ads_flow', // ID unificado
+    id: 'ads_flow',
     title: "Vocês rodam anúncios pagos hoje?",
-    type: 'conditional-sub', // Novo tipo para lidar com a lógica visual
+    type: 'conditional-sub',
     options: [
       { label: "Sim", value: "sim" },
       { label: "Não", value: "nao" }
@@ -96,7 +96,7 @@ const QUESTIONS = [
     subQuestion: {
       id: 'investimento_ads',
       title: "Qual faixa média mensal de investimento?",
-      conditionValue: 'sim', // Aparece só se responder 'sim' acima
+      conditionValue: 'sim',
       options: [
         { label: "Até R$ 3 mil", value: "ate-3k" },
         { label: "R$ 3–10 mil", value: "3-10k" },
@@ -169,7 +169,24 @@ const QUESTIONS = [
       { label: "Site / Landing Page", value: "site" }
     ]
   },
-  // 13. Prazo
+  // --- NOVA PERGUNTA: MÉTRICAS (Multipla Ilimitada + Outros) ---
+  {
+    id: 'metricas',
+    title: "Quais dados/métricas vocês acompanham hoje?",
+    subtitle: "Selecione todas as que se aplicam.",
+    type: 'multi-unlimited', // Novo tipo
+    options: [
+      { label: "Leads Gerados", value: "leads" },
+      { label: "Vendas Feitas", value: "vendas" },
+      { label: "ROI (Retorno sobre Investimento)", value: "roi" },
+      { label: "ROAS (Retorno sobre Ads)", value: "roas" },
+      { label: "CSAT / NPS (Satisfação)", value: "csat" },
+      { label: "Ticket Médio", value: "ticket" },
+      { label: "Conversão por canal", value: "conversao" },
+      { label: "Outros", value: "outros" }
+    ]
+  },
+  // 14. Prazo
   {
     id: 'prazo',
     title: "Em quanto tempo você quer resolver isso?",
@@ -197,6 +214,7 @@ function Diagnostico() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [brandSearch, setBrandSearch] = useState("");
+  const [otherText, setOtherText] = useState(""); // Estado para o campo "Outros"
 
   const question = QUESTIONS[currentStep];
   const progress = Math.round(((currentStep + 1) / QUESTIONS.length) * 100);
@@ -206,10 +224,10 @@ function Diagnostico() {
   }, [currentStep]);
 
   const handleSelect = (questionId: string, value: string, type: string) => {
+    // SINGLE / CONDITIONAL
     if (type === 'single' || type === 'conditional-sub') {
       setAnswers(prev => ({ ...prev, [questionId]: value }));
       
-      // Se for "Não" na pergunta de Ads, limpa o investimento caso já tivesse marcado
       if (questionId === 'ads_flow' && value === 'nao') {
         setAnswers(prev => {
           const newAnswers = { ...prev };
@@ -218,11 +236,21 @@ function Diagnostico() {
         });
       }
     } 
+    // MULTI LIMITADO (ATÉ 2)
     else if (type === 'multi-max-2') {
       const currentSelected = answers[questionId] || [];
       if (currentSelected.includes(value)) {
         setAnswers(prev => ({ ...prev, [questionId]: currentSelected.filter((i: string) => i !== value) }));
       } else if (currentSelected.length < 2) {
+        setAnswers(prev => ({ ...prev, [questionId]: [...currentSelected, value] }));
+      }
+    }
+    // NOVO: MULTI ILIMITADO
+    else if (type === 'multi-unlimited') {
+      const currentSelected = answers[questionId] || [];
+      if (currentSelected.includes(value)) {
+        setAnswers(prev => ({ ...prev, [questionId]: currentSelected.filter((i: string) => i !== value) }));
+      } else {
         setAnswers(prev => ({ ...prev, [questionId]: [...currentSelected, value] }));
       }
     }
@@ -237,11 +265,18 @@ function Diagnostico() {
   };
 
   const handleNext = () => {
-    // 1. Validação Geral
-    if (!answers[question.id] && question.type !== 'multi-max-2' && question.type !== 'conditional-sub') return;
+    // 1. Validação Geral (exceto multis e condicionais)
+    if (!answers[question.id] && 
+        question.type !== 'multi-max-2' && 
+        question.type !== 'multi-unlimited' && 
+        question.type !== 'conditional-sub') return;
     
-    // 2. Validação Multipla
-    if (question.type === 'multi-max-2' && (!answers[question.id] || answers[question.id].length === 0)) return;
+    // 2. Validação Multipla (Garante pelo menos 1 selecionado)
+    if ((question.type === 'multi-max-2' || question.type === 'multi-unlimited') && 
+        (!answers[question.id] || answers[question.id].length === 0)) {
+        alert("Por favor, selecione pelo menos uma opção.");
+        return;
+    }
     
     // 3. Validação Marcas
     if (question.id === 'estrutura' && 
@@ -251,17 +286,25 @@ function Diagnostico() {
       return;
     }
 
-    // 4. Validação da Condicional (Ads + Investimento)
+    // 4. Validação da Condicional
     if (question.type === 'conditional-sub') {
-      if (!answers[question.id]) return; // Não respondeu a principal
-      
-      // Se respondeu SIM, tem que responder a subpergunta
+      if (!answers[question.id]) return; 
       if (answers[question.id] === question.subQuestion?.conditionValue) {
         if (!answers[question.subQuestion!.id]) {
           alert("Por favor, selecione a faixa de investimento.");
           return;
         }
       }
+    }
+
+    // SALVAR "OUTROS"
+    // Se a pergunta atual for a de métricas e "Outros" estiver marcado, salva o texto
+    if (question.id === 'metricas') {
+       if (answers['metricas']?.includes('outros')) {
+          answers['metricas_outros_texto'] = otherText;
+       } else {
+          delete answers['metricas_outros_texto'];
+       }
     }
 
     if (currentStep < QUESTIONS.length - 1) {
@@ -277,15 +320,18 @@ function Diagnostico() {
     else navigate('/');
   };
 
-  // Lógica Visual
+  // --- LÓGICA VISUAL ---
   const showBrandsSelection = question.id === 'estrutura' && 
     (answers['estrutura'] === 'concessionaria' || answers['estrutura'] === 'grupo');
 
   const filteredBrands = CAR_BRANDS.filter(b => b.toLowerCase().includes(brandSearch.toLowerCase()));
 
-  // Lógica para mostrar a subpergunta de investimento
   const showInvestmentOptions = question.id === 'ads_flow' && 
     answers['ads_flow'] === 'sim';
+
+  // Lógica para mostrar campo "Outros"
+  const showOtherInput = question.id === 'metricas' && 
+    answers['metricas']?.includes('outros');
 
   return (
     <div className="min-h-screen bg-autoforce-dark text-white font-sans flex flex-col selection:bg-autoforce-blue selection:text-white">
@@ -326,7 +372,9 @@ function Diagnostico() {
 
           <div className="space-y-3">
             {question.options.map((option) => {
-              const isSelected = question.type === 'multi-max-2' 
+              // Lógica de seleção (Single vs Multi)
+              const isSelected = 
+                question.type === 'multi-max-2' || question.type === 'multi-unlimited'
                 ? (answers[question.id] || []).includes(option.value)
                 : answers[question.id] === option.value;
 
@@ -355,7 +403,22 @@ function Diagnostico() {
             })}
           </div>
 
-          {/* --- SUB-PERGUNTA: INVESTIMENTO (Aparece embaixo se Sim) --- */}
+          {/* --- CAMPO OUTROS (Se selecionado em Métricas) --- */}
+          {showOtherInput && (
+             <div className="mt-4 animate-fade-in pl-2">
+                <label className="text-sm text-autoforce-blue font-bold uppercase mb-2 block">Quais outros?</label>
+                <input 
+                  type="text"
+                  value={otherText}
+                  onChange={(e) => setOtherText(e.target.value)}
+                  placeholder="Digite aqui..."
+                  className="w-full bg-black/30 border border-autoforce-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:shadow-[0_0_15px_rgba(20,64,255,0.3)]"
+                  autoFocus
+                />
+             </div>
+          )}
+
+          {/* --- SUB-PERGUNTA: INVESTIMENTO --- */}
           {showInvestmentOptions && question.subQuestion && (
             <div className="mt-8 pt-8 border-t border-white/10 animate-fade-in">
               <h3 className="text-xl font-heading font-bold mb-4 text-white">
