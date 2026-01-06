@@ -148,7 +148,7 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nome completo *</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input required type="text" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="text" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
               
@@ -156,7 +156,7 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Cargo *</label>
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input required type="text" placeholder="Ex: Diretor Comercial" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="text" placeholder="Ex: Diretor Comercial" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
 
@@ -165,14 +165,14 @@ function Resultado() {
                   <label className="text-xs font-bold text-gray-500 uppercase ml-1">WhatsApp *</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input required type="tel" maxLength={15} placeholder="(11) 99999-9999" value={formData.phone} onChange={handlePhoneChange} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                    <input required type="tel" maxLength={15} placeholder="(11) 99999-9999" value={formData.phone} onChange={handlePhoneChange} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                   </div>
                 </div>
                 <div className="group">
                   <label className="text-xs font-bold text-gray-500 uppercase ml-1">CNPJ *</label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input required type="text" maxLength={18} placeholder="00.000..." value={formData.cnpj} onChange={handleCnpjChange} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                    <input required type="text" maxLength={18} placeholder="00.000..." value={formData.cnpj} onChange={handleCnpjChange} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                   </div>
                 </div>
               </div>
@@ -181,7 +181,7 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">E-mail corporativo *</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input required type="email" placeholder="nome@empresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="email" placeholder="nome@empresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
 
@@ -189,7 +189,7 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Site</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
 
