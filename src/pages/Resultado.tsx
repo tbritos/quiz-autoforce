@@ -82,7 +82,7 @@ function Resultado() {
   const sendDataToWebhook = async (finalData: any) => {
     try {
       // ✅ SEU LINK DO N8N CONECTADO:
-      const WEBHOOK_URL = "https://n8n.autoforce.com/webhook-test/0079cc2e-0814-4f6d-869d-83fec83fafa1"; 
+      const WEBHOOK_URL = "https://n8n.autoforce.com/webhook/0079cc2e-0814-4f6d-869d-83fec83fafa1"; 
       
       await fetch(WEBHOOK_URL, {
         method: 'POST',
