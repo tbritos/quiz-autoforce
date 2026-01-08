@@ -8,34 +8,40 @@ function Home() {
     <div className="min-h-screen bg-autoforce-dark text-white font-sans selection:bg-autoforce-blue selection:text-white">
       
       {/* --- HERO SECTION (Topo com Imagem) --- */}
-      <div className="relative pt-20 pb-20 px-4 overflow-hidden">
+      {/* AJUSTE: Aumentei o padding vertical (py-16 md:py-24) para dar mais respiro no mobile */}
+      <div className="relative pt-16 pb-16 md:pt-24 md:pb-24 px-4 overflow-hidden">
         
         {/* Efeitos de Luz de Fundo */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-autoforce-blue/20 blur-[120px] rounded-full z-0 pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
           
           {/* Lado Esquerdo: Texto */}
-          <div className="md:w-1/2 text-left space-y-8">
+          {/* AJUSTE MAIN: Mudei para 'text-center md:text-left' para centralizar no mobile */}
+          <div className="md:w-1/2 text-center md:text-left space-y-6 md:space-y-8">
             
             {/* Badge de Tempo */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-autoforce-surface border border-autoforce-blue/30 shadow-[0_0_15px_rgba(20,64,255,0.2)]">
+            {/* AJUSTE: 'inline-flex' já centraliza quando o pai é text-center. Adicionei 'mx-auto md:mx-0' para garantir. */}
+            <div className="inline-flex mx-auto md:mx-0 items-center gap-2 px-4 py-2 rounded-full bg-autoforce-surface border border-autoforce-blue/30 shadow-[0_0_15px_rgba(20,64,255,0.2)]">
               <Clock className="w-4 h-4 text-autoforce-blue" />
               <span className="text-sm font-semibold tracking-wide text-gray-200">Leva apenas 3 minutos</span>
             </div>
 
             {/* Título Principal */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold leading-tight">
+            {/* AJUSTE DE FONTE: Mudei para 'text-3xl sm:text-4xl' no mobile para ficar menor e mais harmônico */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold leading-tight">
               Receba uma <span className="text-transparent bg-clip-text bg-gradient-to-r from-autoforce-blue to-blue-400">consultoria gratuita</span> para melhorar a performance da sua Operação de Vendas de Veículos
             </h1>
 
             {/* Subtítulo */}
-            <p className="text-lg text-gray-400 leading-relaxed max-w-xl">
+            {/* AJUSTE: Adicionei 'mx-auto md:mx-0' para centralizar o bloco de texto */}
+            <p className="text-lg text-gray-400 leading-relaxed max-w-xl mx-auto md:mx-0">
               Preencha esse diagnóstico e receba um relatório com indicadores chave (KPIs) da estrutura de marketing e vendas do seu negócio, e ainda ganhe uma consultoria ao vivo com especialista.
             </p>
 
             {/* Botão Principal */}
-            <div className="pt-2">
+            {/* AJUSTE: Aumentei o padding top (pt-4 md:pt-2) para afastar do texto */}
+            <div className="pt-6 md:pt-4">
               <button 
                 onClick={() => navigate('/diagnostico')}
                 className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-autoforce-blue rounded-lg hover:bg-blue-600 hover:scale-105 shadow-[0_0_20px_rgba(20,64,255,0.4)] w-full md:w-auto"
@@ -43,19 +49,21 @@ function Home() {
                 Iniciar Diagnóstico Gratuito
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
+              {/* O texto pequeno já vai centralizar por causa da div pai */}
               <p className="mt-4 text-sm text-gray-500">Resultados em tempo real • 100% Gratuito</p>
             </div>
           </div>
 
           {/* Lado Direito: Imagem */}
-          <div className="md:w-1/2 flex justify-center relative">
+          {/* AJUSTE: Adicionei 'mt-8 md:mt-0' para dar espaço entre o botão e a imagem no mobile */}
+          <div className="md:w-1/2 flex justify-center relative mt-10 md:mt-0">
             {/* Efeito de brilho atrás da imagem */}
             <div className="absolute inset-0 bg-autoforce-blue/20 blur-[60px] rounded-full -z-10"></div>
             
             <img 
               src="/hero-image4.png" 
               alt="Dashboard de Vendas AutoForce" 
-              className="w-full max-w-lg object-cover rounded-2xl shadow-2xl border border-white/10 hover:border-autoforce-blue/50 transition-colors"
+              className="w-full max-w-[400px] md:max-w-lg object-cover rounded-2xl shadow-2xl border border-white/10 hover:border-autoforce-blue/50 transition-colors"
             />
           </div>
 
