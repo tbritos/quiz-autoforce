@@ -4,7 +4,7 @@ import {
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, PlayCircle, 
   TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
-  BarChart3, Download, XCircle, CheckCircle
+  BarChart3, Download, XCircle, CheckCircle, Bot // Adicionei o ícone Bot
 } from 'lucide-react';
 
 function Resultado() {
@@ -44,7 +44,8 @@ function Resultado() {
     if (answers.estrutura === 'grupo' || answers.lojas === '8+') points += 20;
 
     let finalScore = Math.min(points, 100);
-    if (finalScore < 30) finalScore = 42; 
+    // Garante que se for muito baixo, dá uma nota "quebrada" pra parecer real
+    if (finalScore < 30) finalScore = 35; 
 
     // Tier Definition
     let tier: 'HOT' | 'WARM' | 'COLD' = 'COLD';
@@ -140,30 +141,46 @@ function Resultado() {
     window.print();
   };
 
-  // --- CONTEÚDO DINÂMICO ---
+  // --- CONTEÚDO DINÂMICO (CTAs NOVOS AQUI) ---
   const getContent = () => {
+    
+    // 1. LEAD MUITO QUALIFICADO (HOT)
     if (qualification === 'HOT') return {
-      tag: "PERFIL LÍDER",
-      tagColor: "bg-autoforce-blue text-white",
-      urgency: "Alta Urgência",
-      msg: "Sua operação tem maturidade para escalar agressivamente. O gargalo atual está custando vendas diárias.",
-      ctaTitle: "Falar com Consultor Senior",
+      tag: "ALTA MATURIDADE",
+      tagColor: "bg-green-500/10 text-green-500 border border-green-500/20",
+      urgency: "Otimização Avançada",
+      msg: "Sua operação tem maturidade para escalar agressivamente. O gargalo atual é processo, não volume. Fale com um especialista.",
+      ctaTitle: "Consultoria SDR Especializada",
       ctaSub: "Prioridade na agenda",
-      ctaLink: `https://wa.me/5511999999999?text=Olá, sou ${formData.name}, fiz o diagnóstico e minha nota foi ${score}.`,
+      ctaLink: "https://linkforce.cc/diagnostico_sdr",
       ctaIcon: Zap,
-      isVsl: false
+      buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
     
+    // 2. LEAD MÉDIO (WARM) - LARA IA
+    if (qualification === 'WARM') return {
+      tag: "POTENCIAL DE ESCALA",
+      tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
+      urgency: "Oportunidade de Automação",
+      msg: "Você tem volume, mas processos manuais estão travando seu crescimento. A IA pode atender seus leads instantaneamente.",
+      ctaTitle: "Conhecer Lara (IA de Vendas)",
+      ctaSub: "Ver demonstração",
+      ctaLink: "https://linkforce.cc/diagnostico_lara",
+      ctaIcon: Bot, // Ícone de robô
+      buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
+    };
+
+    // 3. LEAD DESQUALIFICADO (COLD)
     return {
-      tag: "EM DESENVOLVIMENTO",
-      tagColor: "bg-autoforce-yellow text-autoforce-dark",
-      urgency: "Média Urgência",
-      msg: "Você tem potencial, mas processos manuais estão travando seu crescimento. Estruture a base antes de acelerar.",
-      ctaTitle: "Ver Plano de Ação",
-      ctaSub: "Vídeo Explicativo",
-      ctaLink: "https://lp.autoforce.com/aula-gestao-leads",
+      tag: "EM ESTRUTURAÇÃO",
+      tagColor: "bg-red-500/10 text-red-500 border border-red-500/20",
+      urgency: "Correção de Base",
+      msg: "Identificamos gargalos fundamentais. Antes de investir em ferramentas, recomendamos estruturar seu processo com este guia.",
+      ctaTitle: "Ver Guia de Vendas 2026",
+      ctaSub: "Aula Gratuita",
+      ctaLink: "https://lp.autodromo.com.br/atf2025-ou-lp-maquina-de-vendas-para-concessionarias-guia-2026-2/",
       ctaIcon: PlayCircle,
-      isVsl: true
+      buttonStyle: "bg-autoforce-yellow text-autoforce-dark hover:bg-white hover:text-autoforce-dark"
     };
   };
 
@@ -268,8 +285,8 @@ function Resultado() {
           {/* HEADER */}
           <div className="flex justify-between items-start mb-10 print:mb-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-autoforce-blue/10 border border-autoforce-blue/20 text-autoforce-blue text-xs font-bold uppercase tracking-wider mb-4 print:hidden">
-                <CheckCircle2 className="w-3 h-3" /> Diagnóstico Concluído
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 print:hidden ${content.tagColor}`}>
+                <CheckCircle2 className="w-3 h-3" /> {content.tag}
               </div>
               <h1 className="text-3xl md:text-5xl font-heading font-bold mb-2 print:text-black">
                 Diagnóstico Digital
@@ -374,11 +391,7 @@ function Resultado() {
 
             <button 
               onClick={() => window.open(content.ctaLink, '_blank')}
-              className={`px-8 py-4 rounded-xl font-bold transition-all shadow-lg flex flex-col items-center justify-center min-w-[280px] group
-                ${content.isVsl 
-                  ? 'bg-autoforce-yellow text-autoforce-dark hover:bg-white' 
-                  : 'bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue'
-                }`}
+              className={`px-8 py-4 rounded-xl font-bold transition-all shadow-lg flex flex-col items-center justify-center min-w-[280px] group ${content.buttonStyle}`}
             >
               <div className="flex items-center gap-2 text-lg">
                 <content.ctaIcon className="w-5 h-5" />
