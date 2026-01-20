@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
-  Building2, Briefcase, Globe, PlayCircle, 
+  Building2, Briefcase, Globe, 
   TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
   BarChart3, Download, XCircle, CheckCircle, Bot
 } from 'lucide-react';
