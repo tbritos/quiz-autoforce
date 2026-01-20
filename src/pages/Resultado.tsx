@@ -4,7 +4,7 @@ import {
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, PlayCircle, 
   TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
-  BarChart3, Download, XCircle, CheckCircle, Bot // Adicionei o ícone Bot
+  BarChart3, Download, XCircle, CheckCircle, Bot
 } from 'lucide-react';
 
 function Resultado() {
@@ -14,10 +14,23 @@ function Resultado() {
   
   const [step, setStep] = useState<'locked' | 'loading' | 'result'>('locked');
   const [score, setScore] = useState(0);
-  const [qualification, setQualification] = useState<'HOT' | 'WARM' | 'COLD'>('WARM');
+  const [qualification, setQualification] = useState<'HOT' | 'WARM'>('WARM');
+  
   const [formData, setFormData] = useState({ 
-    name: '', role: '', phone: '', email: '', cnpj: '', website: '', noWebsite: false, consent: false 
+    name: '', role: '', phone: '', email: '', cnpj: '', website: '', consent: false 
   });
+
+  // --- VALIDAÇÃO DE E-MAIL CORPORATIVO ---
+  const isCorporateEmail = (email: string) => {
+    const publicDomains = [
+      'gmail.com', 'hotmail.com', 'outlook.com', 'outlook.com.br', 
+      'yahoo.com', 'yahoo.com.br', 'live.com', 'icloud.com', 
+      'uol.com.br', 'bol.com.br', 'terra.com.br', 'ig.com.br', 'globo.com'
+    ];
+    const domain = email.split('@')[1];
+    if (!domain) return false;
+    return !publicDomains.includes(domain.toLowerCase());
+  };
 
   // --- MÁSCARAS ---
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,29 +42,39 @@ function Resultado() {
     setFormData({ ...formData, cnpj: v });
   };
 
-  // --- LÓGICA DE SCORING E PRIORIDADES ---
+  // --- LÓGICA DE QUALIFICAÇÃO (Mantida da última versão) ---
   const calculateResult = () => {
+    // 1. Score Visual
     let points = 0;
-    
-    // Score Calculation
     if (['70k+', '30-70k'].includes(answers.investimento_ads)) points += 30;
     else if (['10-30k'].includes(answers.investimento_ads)) points += 20;
-    
     if (['200+', '100-199'].includes(answers.vendas_mes)) points += 30;
     else if (['50-99'].includes(answers.vendas_mes)) points += 20;
-
     if (answers.crm === 'crm-avancado') points += 20;
     if (answers.estrutura === 'grupo' || answers.lojas === '8+') points += 20;
 
     let finalScore = Math.min(points, 100);
-    // Garante que se for muito baixo, dá uma nota "quebrada" pra parecer real
-    if (finalScore < 30) finalScore = 35; 
+    if (finalScore < 30) finalScore = 35;
 
-    // Tier Definition
-    let tier: 'HOT' | 'WARM' | 'COLD' = 'COLD';
-    if (points >= 70) tier = 'HOT';
-    else if (points >= 40) tier = 'WARM';
+    // 2. Decisão HOT vs WARM
+    let tier: 'HOT' | 'WARM' = 'WARM'; 
+
+    const cargo = formData.role.toLowerCase();
+    const cargosDecisores = ['ceo', 'dono', 'proprietário', 'proprietario', 'sócio', 'socio', 'gerente', 'diretor', 'head', 'coordenador', 'supervisor', 'presidente'];
+    const isDecisor = cargosDecisores.some(c => cargo.includes(c));
+
+    const estrutura = (answers.estrutura || '').toLowerCase();
+    const isConcessionaria = estrutura.includes('grupo') || estrutura.includes('concessionaria') || estrutura.includes('concessionária');
     
+    const volumeAlto = ['50-99', '100-199', '200+', '50+', '100+'];
+    const volumeAtual = answers.vendas_mes || answers.estoque || '';
+    const isHighVolume = volumeAlto.some(v => volumeAtual.includes(v));
+    const isBigMultimarcas = estrutura.includes('multimarcas') && isHighVolume;
+
+    if (isDecisor && (isConcessionaria || isBigMultimarcas)) {
+      tier = 'HOT';
+    } 
+
     return { score: finalScore, tier };
   };
 
@@ -61,37 +84,30 @@ function Resultado() {
     if (answers.tempo_resposta === '2h' || answers.tempo_resposta === '24h+') list.push("Reduzir SLA de atendimento para < 10 min");
     if (!answers.investimento_ads || answers.investimento_ads === 'ate-3k') list.push("Estruturar campanhas de tráfego pago");
     if (answers.estrutura === 'loja-unica') list.push("Criar Playbook de Vendas para escala");
-    
-    // Default se a lista for pequena
     if (list.length < 3) list.push("Auditoria de conversão no site");
-    return list.slice(0, 3); // Retorna top 3
+    return list.slice(0, 3);
   };
 
   const getChecklist = () => {
-    // Simulação de auditoria técnica baseada nas respostas
     return [
       { item: "CRM Integrado", status: answers.crm === 'crm-avancado' },
       { item: "Tempo de Resposta Ágil", status: ['5min', '30min'].includes(answers.tempo_resposta) },
       { item: "Volume de Tráfego", status: !['ate-3k', '3-10k'].includes(answers.investimento_ads) },
       { item: "Estrutura de Pré-vendas", status: ['hibrido', 'interno'].includes(answers.estrutura_mkt) },
-      { item: "Rastreamento de Origem", status: true }, // Assumido
-      { item: "Landing Pages Otimizadas", status: false }, // Provocação para venda
+      { item: "Rastreamento de Origem", status: true },
+      { item: "Landing Pages Otimizadas", status: false },
     ];
   };
 
-  // --- ENVIO PARA BACKEND (WEBHOOK) ---
   const sendDataToWebhook = async (finalData: any) => {
     try {
-      // ✅ SEU LINK DO N8N CONECTADO:
       const WEBHOOK_URL = "https://n8n.autoforce.com/webhook/0079cc2e-0814-4f6d-869d-83fec83fafa1"; 
-      
       await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalData)
       });
       console.log("Dados enviados para o n8n com sucesso!");
-
     } catch (error) {
       console.error("Erro ao enviar para n8n", error);
     }
@@ -99,12 +115,25 @@ function Resultado() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // --- VALIDAÇÕES EXTRAS ---
     if (!formData.consent) { alert("Necessário aceitar LGPD."); return; }
+    
+    // Validação de Site (Agora Obrigatória)
+    if (!formData.website || formData.website.trim().length < 4) {
+      alert("Por favor, insira o site da sua empresa.");
+      return;
+    }
+
+    // Validação de E-mail Corporativo
+    if (!isCorporateEmail(formData.email)) {
+      alert("Por favor, utilize um e-mail corporativo (ex: nome@suaempresa.com). E-mails como Gmail, Hotmail ou Yahoo não são aceitos.");
+      return;
+    }
     
     const { score, tier } = calculateResult();
     setQualification(tier);
     
-    // Dados completos do Lead
     const leadData = { 
       contact: formData, 
       answers, 
@@ -113,7 +142,7 @@ function Resultado() {
     };
 
     console.log("LEAD PROCESSADO:", leadData);
-    sendDataToWebhook(leadData); // Envia para o n8n
+    sendDataToWebhook(leadData);
     
     setStep('loading');
     setTimeout(() => {
@@ -136,51 +165,33 @@ function Resultado() {
     }, 10);
   };
 
-  // --- FUNÇÃO DE PDF ---
   const handlePrint = () => {
     window.print();
   };
 
-  // --- CONTEÚDO DINÂMICO (CTAs NOVOS AQUI) ---
   const getContent = () => {
-    
-    // 1. LEAD MUITO QUALIFICADO (HOT)
     if (qualification === 'HOT') return {
-      tag: "ALTA MATURIDADE",
+      tag: "ALTA QUALIFICAÇÃO",
       tagColor: "bg-green-500/10 text-green-500 border border-green-500/20",
       urgency: "Otimização Avançada",
-      msg: "Sua operação tem maturidade para escalar agressivamente. O gargalo atual é processo, não volume. Fale com um especialista.",
-      ctaTitle: "Consultoria SDR Especializada",
+      msg: "Identificamos que sua operação tem a estrutura ideal para escalar. Você tem prioridade para falar com nosso consultor especialista.",
+      ctaTitle: "Falar com Consultor (SDR)",
       ctaSub: "Prioridade na agenda",
       ctaLink: "https://linkforce.cc/diagnostico_sdr",
       ctaIcon: Zap,
       buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
     
-    // 2. LEAD MÉDIO (WARM) - LARA IA
-    if (qualification === 'WARM') return {
-      tag: "POTENCIAL DE ESCALA",
-      tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
-      urgency: "Oportunidade de Automação",
-      msg: "Você tem volume, mas processos manuais estão travando seu crescimento. A IA pode atender seus leads instantaneamente.",
-      ctaTitle: "Conhecer Lara (IA de Vendas)",
-      ctaSub: "Ver demonstração",
-      ctaLink: "https://linkforce.cc/diagnostico_lara",
-      ctaIcon: Bot, // Ícone de robô
-      buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
-    };
-
-    // 3. LEAD DESQUALIFICADO (COLD)
     return {
-      tag: "EM ESTRUTURAÇÃO",
-      tagColor: "bg-red-500/10 text-red-500 border border-red-500/20",
-      urgency: "Correção de Base",
-      msg: "Identificamos gargalos fundamentais. Antes de investir em ferramentas, recomendamos estruturar seu processo com este guia.",
-      ctaTitle: "Ver Guia de Vendas 2026",
-      ctaSub: "Aula Gratuita",
-      ctaLink: "https://lp.autodromo.com.br/atf2025-ou-lp-maquina-de-vendas-para-concessionarias-guia-2026-2/",
-      ctaIcon: PlayCircle,
-      buttonStyle: "bg-autoforce-yellow text-autoforce-dark hover:bg-white hover:text-autoforce-dark"
+      tag: "POTENCIAL DE CRESCIMENTO",
+      tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
+      urgency: "Automação Recomendada",
+      msg: "Para crescer sua operação sem inchar a equipe, a melhor estratégia hoje é Inteligência Artificial. Conheça a Lara, que atende seus leads 24h.",
+      ctaTitle: "Conhecer Lara (IA de Vendas)",
+      ctaSub: "Ver demonstração interativa",
+      ctaLink: "https://linkforce.cc/diagnostico_lara",
+      ctaIcon: Bot,
+      buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
   };
 
@@ -191,7 +202,6 @@ function Resultado() {
   return (
     <div className="min-h-screen bg-autoforce-dark text-white font-sans flex flex-col items-center justify-center p-4 md:p-8 print:bg-white print:text-black">
       
-      {/* Elementos de fundo (Escondidos na impressão) */}
       <div className="fixed inset-0 pointer-events-none z-0 print:hidden">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-autoforce-blue/10 blur-[120px] rounded-full"></div>
       </div>
@@ -204,7 +214,7 @@ function Resultado() {
                 <Lock className="w-6 h-6 text-autoforce-blue" />
               </div>
               <h2 className="text-2xl font-bold">Diagnóstico Finalizado</h2>
-              <p className="text-gray-400 text-sm mt-1">Preencha seus dados para liberar o dashboard completo.</p>
+              <p className="text-gray-400 text-sm mt-1">Preencha seus dados corporativos para liberar o resultado.</p>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -220,7 +230,7 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Cargo *</label>
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input required type="text" placeholder="Ex: Diretor Comercial" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="text" placeholder="Ex: Diretor, Gerente..." value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
 
@@ -245,15 +255,16 @@ function Resultado() {
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">E-mail corporativo *</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input required type="email" placeholder="nome@empresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="email" placeholder="nome@suaempresa.com.br" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
+                <p className="text-[10px] text-gray-500 mt-1 ml-1">* E-mails como Gmail ou Hotmail não são permitidos.</p>
               </div>
 
               <div className="group">
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Site</label>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Site da Empresa *</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
+                  <input required type="text" placeholder="www.suaempresa.com.br" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white focus:border-autoforce-blue outline-none" />
                 </div>
               </div>
 
@@ -282,7 +293,6 @@ function Resultado() {
       {step === 'result' && (
         <div className="relative z-10 w-full max-w-6xl animate-slide-up pb-12 print:p-0 print:w-full print:max-w-none">
           
-          {/* HEADER */}
           <div className="flex justify-between items-start mb-10 print:mb-6">
             <div>
               <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 print:hidden ${content.tagColor}`}>
@@ -302,10 +312,8 @@ function Resultado() {
             </button>
           </div>
 
-          {/* GRID SUPERIOR */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
             
-            {/* SCORE CARD */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center flex flex-col items-center justify-center print:border-gray-300 print:bg-gray-50">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Score Digital</span>
               <div className="text-6xl font-heading font-black text-white mb-1 print:text-black">
@@ -315,7 +323,6 @@ function Resultado() {
               <div className="text-sm font-bold text-autoforce-blue">{content.urgency}</div>
             </div>
 
-            {/* PRIORIDADES (NOVO) */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:col-span-2 print:border-gray-300 print:bg-gray-50">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 block">
                 <AlertTriangle className="inline w-3 h-3 mr-1 mb-0.5" /> Atenção Imediata
@@ -333,10 +340,8 @@ function Resultado() {
             </div>
           </div>
 
-          {/* CHECKLIST E DETALHES */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 print:grid-cols-3">
             
-            {/* CHECKLIST (NOVO) */}
             <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 print:border-gray-300 print:bg-white">
               <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 print:text-black">
                 <BarChart3 className="w-5 h-5 text-gray-400" /> Auditoria Técnica
@@ -355,7 +360,6 @@ function Resultado() {
               </div>
             </div>
 
-            {/* CARD DE MÉTRICAS */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col gap-6 print:border-gray-300 print:bg-white">
                <div>
                   <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-1">
@@ -378,7 +382,6 @@ function Resultado() {
             </div>
           </div>
 
-          {/* CTA ACTION (Escondido na Impressão) */}
           <div className="w-full bg-gradient-to-r from-autoforce-blue/20 to-transparent border border-autoforce-blue/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left shadow-[0_0_40px_rgba(20,64,255,0.1)] print:hidden">
             <div className="flex-1">
               <h3 className="text-2xl font-heading font-bold text-white mb-2">
