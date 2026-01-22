@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { 
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, 
   TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
-  BarChart3, Download, XCircle, CheckCircle, Bot
+  BarChart3, Download, XCircle, CheckCircle, Bot, Loader2
 } from 'lucide-react';
 
 function Resultado() {
@@ -12,15 +14,17 @@ function Resultado() {
   const location = useLocation();
   const answers = location.state?.answers || {};
   
+  const printRef = useRef<HTMLDivElement>(null);
+  
   const [step, setStep] = useState<'locked' | 'loading' | 'result'>('locked');
   const [score, setScore] = useState(0);
   const [qualification, setQualification] = useState<'HOT' | 'WARM'>('WARM');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   const [formData, setFormData] = useState({ 
     name: '', role: '', phone: '', email: '', cnpj: '', website: '', consent: false 
   });
 
-  // --- VALIDAÇÃO DE E-MAIL CORPORATIVO ---
   const isCorporateEmail = (email: string) => {
     const publicDomains = [
       'gmail.com', 'hotmail.com', 'outlook.com', 'outlook.com.br', 
@@ -32,7 +36,6 @@ function Resultado() {
     return !publicDomains.includes(domain.toLowerCase());
   };
 
-  // --- MÁSCARAS ---
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, "").replace(/^(\d{2})(\d)/g, "($1) $2").replace(/(\d)(\d{4})$/, "$1-$2");
     setFormData({ ...formData, phone: v });
@@ -42,9 +45,7 @@ function Resultado() {
     setFormData({ ...formData, cnpj: v });
   };
 
-  // --- LÓGICA DE QUALIFICAÇÃO (Mantida da última versão) ---
   const calculateResult = () => {
-    // 1. Score Visual
     let points = 0;
     if (['70k+', '30-70k'].includes(answers.investimento_ads)) points += 30;
     else if (['10-30k'].includes(answers.investimento_ads)) points += 20;
@@ -56,16 +57,12 @@ function Resultado() {
     let finalScore = Math.min(points, 100);
     if (finalScore < 30) finalScore = 35;
 
-    // 2. Decisão HOT vs WARM
     let tier: 'HOT' | 'WARM' = 'WARM'; 
-
     const cargo = formData.role.toLowerCase();
     const cargosDecisores = ['ceo', 'dono', 'proprietário', 'proprietario', 'sócio', 'socio', 'gerente', 'diretor', 'head', 'coordenador', 'supervisor', 'presidente'];
     const isDecisor = cargosDecisores.some(c => cargo.includes(c));
-
     const estrutura = (answers.estrutura || '').toLowerCase();
     const isConcessionaria = estrutura.includes('grupo') || estrutura.includes('concessionaria') || estrutura.includes('concessionária');
-    
     const volumeAlto = ['50-99', '100-199', '200+', '50+', '100+'];
     const volumeAtual = answers.vendas_mes || answers.estoque || '';
     const isHighVolume = volumeAlto.some(v => volumeAtual.includes(v));
@@ -74,7 +71,6 @@ function Resultado() {
     if (isDecisor && (isConcessionaria || isBigMultimarcas)) {
       tier = 'HOT';
     } 
-
     return { score: finalScore, tier };
   };
 
@@ -107,7 +103,6 @@ function Resultado() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(finalData)
       });
-      console.log("Dados enviados para o n8n com sucesso!");
     } catch (error) {
       console.error("Erro ao enviar para n8n", error);
     }
@@ -115,32 +110,14 @@ function Resultado() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // --- VALIDAÇÕES EXTRAS ---
     if (!formData.consent) { alert("Necessário aceitar LGPD."); return; }
-    
-    // Validação de Site (Agora Obrigatória)
-    if (!formData.website || formData.website.trim().length < 4) {
-      alert("Por favor, insira o site da sua empresa.");
-      return;
-    }
-
-    // Validação de E-mail Corporativo
-    if (!isCorporateEmail(formData.email)) {
-      alert("Por favor, utilize um e-mail corporativo (ex: nome@suaempresa.com). E-mails como Gmail, Hotmail ou Yahoo não são aceitos.");
-      return;
-    }
+    if (!formData.website || formData.website.trim().length < 4) { alert("Por favor, insira o site da sua empresa."); return; }
+    if (!isCorporateEmail(formData.email)) { alert("Por favor, utilize um e-mail corporativo (ex: nome@suaempresa.com)."); return; }
     
     const { score, tier } = calculateResult();
     setQualification(tier);
     
-    const leadData = { 
-      contact: formData, 
-      answers, 
-      result: { score, tier },
-      generatedAt: new Date().toISOString()
-    };
-
+    const leadData = { contact: formData, answers, result: { score, tier }, generatedAt: new Date().toISOString() };
     console.log("LEAD PROCESSADO:", leadData);
     sendDataToWebhook(leadData);
     
@@ -165,8 +142,46 @@ function Resultado() {
     }, 10);
   };
 
-  const handlePrint = () => {
-    window.print();
+  // --- PDF GENERATOR (Ajustado para preenchimento total) ---
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const canvas = await html2canvas(printRef.current, {
+        scale: 4, 
+        useCORS: true,
+        backgroundColor: '#020617', 
+        ignoreElements: (element) => element.classList.contains('no-print')
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Pinta o fundo
+      pdf.setFillColor(2, 6, 23); 
+      pdf.rect(0, 0, pdfWidth, pdfHeight, 'F'); 
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      // Ajuste para preencher a largura total (Full Width)
+      const ratio = pdfWidth / imgWidth; 
+      
+      const imgX = 0; // Começa do canto
+      const imgY = 10; // Pequena margem topo
+
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`Diagnostico-AutoForce-${formData.name}.pdf`);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Houve um erro ao gerar o PDF.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const getContent = () => {
@@ -181,7 +196,6 @@ function Resultado() {
       ctaIcon: Zap,
       buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
-    
     return {
       tag: "POTENCIAL DE CRESCIMENTO",
       tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
@@ -200,9 +214,9 @@ function Resultado() {
   const checklist = getChecklist();
 
   return (
-    <div className="min-h-screen bg-autoforce-dark text-white font-sans flex flex-col items-center justify-center p-4 md:p-8 print:bg-white print:text-black">
+    <div className="min-h-screen bg-autoforce-dark text-white font-sans flex flex-col items-center justify-center p-4 md:p-8">
       
-      <div className="fixed inset-0 pointer-events-none z-0 print:hidden">
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-autoforce-blue/10 blur-[120px] rounded-full"></div>
       </div>
 
@@ -283,73 +297,82 @@ function Resultado() {
         </div>
       )}
 
-      {step === 'loading' && (
-        <div className="text-center animate-pulse z-20">
-          <div className="w-16 h-16 border-4 border-autoforce-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold">Processando dados...</h2>
-        </div>
-      )}
-
+      {/* --- ÁREA DO PDF (FORMATO A4 FIXO) --- */}
       {step === 'result' && (
-        <div className="relative z-10 w-full max-w-6xl animate-slide-up pb-12 print:p-0 print:w-full print:max-w-none">
+        <div 
+          ref={printRef}
+          className="relative z-10 w-full max-w-[794px] mx-auto animate-slide-up pb-12 p-8 rounded-3xl bg-autoforce-dark"
+          style={{ width: '794px' }} // Força largura A4 na tela para visualização real
+        >
           
-          <div className="flex justify-between items-start mb-10 print:mb-6">
+          <div className="flex justify-between items-center mb-10">
             <div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 print:hidden ${content.tagColor}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 ${content.tagColor}`}>
                 <CheckCircle2 className="w-3 h-3" /> {content.tag}
               </div>
-              <h1 className="text-3xl md:text-5xl font-heading font-bold mb-2 print:text-black">
+              <h1 className="text-3xl font-heading font-bold mb-2 text-white">
                 Diagnóstico Digital
               </h1>
-              <p className="text-gray-400 print:text-gray-600">Empresa: <span className="text-white font-bold print:text-black">{formData.website || formData.name}</span></p>
+              <p className="text-gray-400">Empresa: <span className="text-white font-bold">{formData.website || formData.name}</span></p>
             </div>
             
             <button 
-              onClick={handlePrint}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors print:hidden"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPdf}
+              className="no-print flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-wait"
             >
-              <Download size={16} /> Baixar PDF
+              {isGeneratingPdf ? (
+                 <>
+                   <Loader2 className="w-4 h-4 animate-spin" /> Gerando...
+                 </>
+              ) : (
+                 <>
+                   <Download size={16} /> Baixar PDF
+                 </>
+              )}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 print:grid-cols-3 print:gap-4">
-            
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center flex flex-col items-center justify-center print:border-gray-300 print:bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center flex flex-col items-center justify-center">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Score Digital</span>
-              <div className="text-6xl font-heading font-black text-white mb-1 print:text-black">
-                {score.toFixed(0)}
+              {/* ALINHAMENTO CORRIGIDO COM BASELINE */}
+              <div className="flex items-baseline justify-center gap-1 mb-1">
+                <span className="text-6xl font-heading font-black text-white leading-none">
+                  {score.toFixed(0)}
+                </span>
                 <span className="text-lg text-gray-500 font-normal">/100</span>
               </div>
               <div className="text-sm font-bold text-autoforce-blue">{content.urgency}</div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:col-span-2 print:border-gray-300 print:bg-gray-50">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 md:col-span-2">
               <span className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 block">
                 <AlertTriangle className="inline w-3 h-3 mr-1 mb-0.5" /> Atenção Imediata
               </span>
               <div className="space-y-3">
                 {priorities.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg print:bg-red-50 print:border-red-100">
-                    <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+                  <div key={index} className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    {/* ALINHAMENTO GEOMÉTRICO DAS BOLINHAS */}
+                    <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 leading-none pt-[2px]">
                       {index + 1}
                     </div>
-                    <span className="text-sm font-medium text-gray-200 print:text-black">{item}</span>
+                    <span className="text-sm font-medium text-gray-200">{item}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 print:grid-cols-3">
-            
-            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 print:border-gray-300 print:bg-white">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 print:text-black">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-gray-400" /> Auditoria Técnica
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {checklist.map((check, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border border-white/5 rounded-xl print:border-gray-200">
-                    <span className="text-sm text-gray-300 print:text-black">{check.item}</span>
+                  <div key={i} className="flex items-center justify-between p-3 border border-white/5 rounded-xl">
+                    <span className="text-sm text-gray-300">{check.item}</span>
                     {check.status ? (
                       <CheckCircle className="text-green-500 w-5 h-5" />
                     ) : (
@@ -360,29 +383,29 @@ function Resultado() {
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col gap-6 print:border-gray-300 print:bg-white">
-               <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-1">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col gap-6">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase">
                     <Clock size={14}/> Tempo Resposta
                   </div>
-                  <div className="text-xl font-bold text-white print:text-black">{answers.tempo_resposta || '-'}</div>
+                  <div className="text-xl font-bold text-white">{answers.tempo_resposta || '-'}</div>
                </div>
-               <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-1">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase">
                     <DollarSign size={14}/> Investimento
                   </div>
-                  <div className="text-xl font-bold text-white print:text-black">{answers.investimento_ads || '-'}</div>
+                  <div className="text-xl font-bold text-white">{answers.investimento_ads || '-'}</div>
                </div>
-               <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase mb-1">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase">
                     <TrendingUp size={14}/> Volume
                   </div>
-                  <div className="text-xl font-bold text-white print:text-black">{answers.vendas_mes || '-'} vendas/mês</div>
+                  <div className="text-xl font-bold text-white text-right">{answers.vendas_mes || '-'} <small className="text-gray-500 text-xs block">vendas/mês</small></div>
                </div>
             </div>
           </div>
 
-          <div className="w-full bg-gradient-to-r from-autoforce-blue/20 to-transparent border border-autoforce-blue/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left shadow-[0_0_40px_rgba(20,64,255,0.1)] print:hidden">
+          <div className="w-full bg-gradient-to-r from-autoforce-blue/20 to-transparent border border-autoforce-blue/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left shadow-[0_0_40px_rgba(20,64,255,0.1)]">
             <div className="flex-1">
               <h3 className="text-2xl font-heading font-bold text-white mb-2">
                 Próximo Passo Recomendado
@@ -404,7 +427,7 @@ function Resultado() {
             </button>
           </div>
 
-          <button onClick={() => navigate('/')} className="mt-12 text-gray-500 hover:text-white flex items-center mx-auto text-sm transition-colors print:hidden">
+          <button onClick={() => navigate('/')} className="no-print mt-12 text-gray-500 hover:text-white flex items-center mx-auto text-sm transition-colors">
             <RefreshCw className="w-4 h-4 mr-2" /> Refazer Diagnóstico
           </button>
         </div>
