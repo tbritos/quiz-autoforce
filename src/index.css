@@ -30,6 +30,19 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
+  .logo-marquee {
+    position: relative;
+  }
+
+  .logo-marquee:hover .logo-marquee-track {
+    animation-play-state: paused;
+  }
+
+  .logo-marquee-track {
+    animation: logoMarquee 28s linear infinite;
+    will-change: transform;
+  }
+
   /* Barra de rolagem personalizada para a lista de marcas */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -52,6 +65,18 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes logoMarquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-marquee-track {
+    animation: none;
+    transform: translateX(0);
+  }
 }
 
 @media print {

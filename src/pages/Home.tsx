@@ -3,6 +3,32 @@ import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const navigate = useNavigate();
+  const logos = [
+    '/logos/Frame 1321314283.svg',
+    '/logos/Frame 1321314284.svg',
+    '/logos/Frame 1321314285.svg',
+    '/logos/Frame 1321314286.svg',
+    '/logos/Frame 1321314287.svg',
+    '/logos/Frame 1321314288.svg',
+    '/logos/Frame 1321314289.svg',
+    '/logos/Frame 1321314290.svg',
+    '/logos/Frame 1321314291.svg',
+    '/logos/Frame 1321314292.svg',
+    '/logos/Frame 1321314293.svg',
+    '/logos/Frame 1321314294.svg',
+    '/logos/Frame 1321314295.svg',
+    '/logos/Frame 1321314296.svg',
+    '/logos/Frame 1321314297.svg',
+    '/logos/Frame 1321314298.svg',
+    '/logos/Frame 1321314299.svg',
+    '/logos/Frame 1321314300.svg',
+    '/logos/Frame 1321314301.svg',
+    '/logos/Frame 1321314302.svg',
+    '/logos/Frame 1321314303.svg',
+    '/logos/Frame 1321314304.svg',
+    '/logos/Frame 1321314305.svg',
+    '/logos/Frame 1321314306.svg',
+  ];
 
   return (
     <div className="min-h-screen bg-autoforce-dark text-white font-sans selection:bg-autoforce-blue selection:text-white">
@@ -24,13 +50,17 @@ function Home() {
             {/* AJUSTE: 'inline-flex' já centraliza quando o pai é text-center. Adicionei 'mx-auto md:mx-0' para garantir. */}
             <div className="inline-flex mx-auto md:mx-0 items-center gap-2 px-4 py-2 rounded-full bg-autoforce-surface border border-autoforce-blue/30 shadow-[0_0_15px_rgba(20,64,255,0.2)]">
               <Clock className="w-4 h-4 text-autoforce-blue" />
-              <span className="text-sm font-semibold tracking-wide text-gray-200">Leva apenas 3 minutos</span>
+              <span className="text-sm font-semibold tracking-wide text-gray-200">Poucos segundos</span>
             </div>
 
             {/* Título Principal */}
             {/* AJUSTE DE FONTE: Mudei para 'text-3xl sm:text-4xl' no mobile para ficar menor e mais harmônico */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold leading-tight">
-              Receba uma <span className="text-transparent bg-clip-text bg-gradient-to-r from-autoforce-blue to-blue-400">consultoria gratuita</span> para melhorar a performance da sua Operação de Vendas de Veículos
+              Receba uma{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-autoforce-blue to-blue-400">
+                consultoria gratuita
+              </span>{' '}
+              para impulsionar os resultados de vendas de veículos do seu negócio.
             </h1>
 
             {/* Subtítulo */}
@@ -70,56 +100,89 @@ function Home() {
         </div>
       </div>
 
-      {/* --- NOVA SEÇÃO: PERDA DE DEMANDA (H2) --- */}
-      <section className="bg-autoforce-surface py-16 border-y border-white/5 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-4xl font-heading font-bold text-white leading-tight">
-            Descubra onde sua operação está <span className="text-red-400 decoration-red-400 underline decoration-2 underline-offset-4">perdendo demanda</span> <br className="hidden md:block"/>
-            <span className="text-gray-400 font-normal text-xl md:text-2xl mt-4 block">
-              (site, mídia, atendimento e funil) e receba recomendações práticas para melhorar os indicadores que realmente impactam vendas.
-            </span>
-          </h2>
+      {/* --- CARROSSEL DE LOGOS --- */}
+      <section className="relative z-10 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-heading font-bold text-white">Confiança comprovada</h2>
+            <p className="text-gray-400 mt-2">
+              Essas são algumas das marcas líderes que impulsionamos com soluções personalizadas.
+            </p>
+          </div>
+
+          <div className="logo-marquee overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+            <div className="logo-marquee-track flex w-max items-center gap-6 md:gap-8">
+              {[...logos, ...logos].map((logo, index) => (
+                <div
+                  key={`${logo}-${index}`}
+                  className="flex items-center justify-center h-16 md:h-20 px-6 md:px-8 rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+                >
+                  <img
+                    src={logo}
+                    alt={`Logo cliente ${index + 1}`}
+                    className="h-8 md:h-10 max-w-[140px] md:max-w-[160px] object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* --- SEÇÃO DE BENEFÍCIOS (Cards) --- */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-24">
-        <div className="grid md:grid-cols-3 gap-8">
-          
-          {/* Card 1 */}
-          <div className="bg-autoforce-surface p-8 rounded-2xl border border-white/5 hover:border-autoforce-blue/50 transition-all hover:-translate-y-1 group">
-            <div className="w-14 h-14 bg-autoforce-blue/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-autoforce-blue transition-colors">
-              <TrendingUp className="w-7 h-7 text-autoforce-blue group-hover:text-white" />
-            </div>
-            <h3 className="text-xl font-heading font-bold mb-3 text-white">Aumente suas vendas em até 2,7x</h3>
-            <p className="text-gray-400 leading-relaxed text-sm">
-              Identifique melhorias que podem aumentar suas vendas em até 2,7x otimizando processos atuais.
-            </p>
-          </div>
+      {/* --- NOVA SEÇÃO: PERDA DE DEMANDA (H2) --- */}
+      <section className="relative z-10 py-16 md:py-20 border-y border-white/5 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-autoforce-blue/5 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute -top-28 right-1/2 translate-x-1/2 w-[600px] h-[300px] bg-autoforce-blue/12 blur-[140px] rounded-full pointer-events-none"></div>
 
-          {/* Card 2 */}
-          <div className="bg-autoforce-surface p-8 rounded-2xl border border-white/5 hover:border-autoforce-blue/50 transition-all hover:-translate-y-1 group">
-            <div className="w-14 h-14 bg-autoforce-blue/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-autoforce-blue transition-colors">
-              <BarChart2 className="w-7 h-7 text-autoforce-blue group-hover:text-white" />
-            </div>
-            <h3 className="text-xl font-heading font-bold mb-3 text-white">Descubra o que está derrubando sua conversão</h3>
-            <p className="text-gray-400 leading-relaxed text-sm">
-              Checklist de performance e conversão para transformar visitas em conversas reais.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="bg-autoforce-surface p-8 rounded-2xl border border-white/5 hover:border-autoforce-blue/50 transition-all hover:-translate-y-1 group">
-            <div className="w-14 h-14 bg-autoforce-blue/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-autoforce-blue transition-colors">
-              <Users className="w-7 h-7 text-autoforce-blue group-hover:text-white" />
-            </div>
-            <h3 className="text-xl font-heading font-bold mb-3 text-white">Gere Mais leads com o mesmo investimento</h3>
-            <p className="text-gray-400 leading-relaxed text-sm">
-              Entenda como as principais concessionárias do Brasil fazem para vender milhões por mês.
-            </p>
-          </div>
+        <div className="max-w-5xl mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-5xl font-heading font-bold text-white leading-tight">
+            Descubra onde sua operação está{' '}
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-500/15 text-red-300 border border-red-500/30">
+              perdendo demanda
+            </span>
+          </h2>
+          <p className="text-gray-300 text-base md:text-lg max-w-3xl mx-auto mt-5 leading-relaxed">
+            (site, mídia, atendimento e funil) e receba recomendações práticas para melhorar os indicadores que realmente
+            impactam vendas.
+          </p>
         </div>
-      </div>
+      </section>
+
+      {/* --- PARCEIROS OFICIAIS --- */}
+      <section className="relative z-10 max-w-7xl mx-auto px-4 py-20">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-heading font-bold text-white">Parceiros oficiais</h2>
+          <p className="text-gray-400 mt-2">Atendemos as maiores montadoras e associações do Brasil</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {[
+            { src: '/selos/selo-homologado-stellantis.svg', alt: 'Selo homologado Stellantis' },
+            { src: '/selos/selo-homologado-renault.svg', alt: 'Selo homologado Renault' },
+            { src: '/selos/selo-homologado-mitsubishi.svg', alt: 'Selo homologado Mitsubishi' },
+            { src: '/selos/selo-homologado-geely.svg', alt: 'Selo homologado Geely' },
+            { src: '/selos/selo-homologado-hyundai.svg', alt: 'Selo homologado Hyundai' },
+            { src: '/selos/selo-homologado-benz.svg', alt: 'Selo homologado Mercedes-Benz' },
+            { src: '/selos/selo-homologado-assohonda.svg', alt: 'Selo homologado Assohonda' },
+            { src: '/selos/selo-homologado-abraparts.svg', alt: 'Selo homologado Abraparts' },
+            { src: '/selos/selo-homologado-abrahy.svg', alt: 'Selo homologado AbrahY' },
+            { src: '/selos/selo-homologado-gwm.svg', alt: 'Selo homologado GWM' },
+          ].map((partner) => (
+            <div
+              key={partner.src}
+              className="group rounded-2xl bg-white/5 p-4 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all duration-300 hover:bg-white/10 hover:shadow-[0_12px_35px_rgba(20,64,255,0.25)]"
+            >
+              <img
+                src={partner.src}
+                alt={partner.alt}
+                className="w-full h-auto object-contain opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* --- CTA FINAL (Rodapé) --- */}
       <div className="border-t border-white/10 bg-autoforce-surface/30">
