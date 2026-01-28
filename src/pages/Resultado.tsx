@@ -649,7 +649,7 @@ function Resultado() {
     };
   };
 
-  const labelMaps = {
+  const labelMaps: Record<string, Record<string, string>> = {
     estrutura: {
       concessionaria: 'Concessionária autorizada',
       multimarcas: 'Revenda multimarcas',
@@ -714,27 +714,30 @@ function Resultado() {
       outros: 'Outros',
     },
     prazo: { '30d': '0–30 dias', '60d': '31–60 dias', '120d': '61–120 dias', '120d+': '120+ dias' },
-  } as const;
+  };
+
+  const getLabel = (map: Record<string, string>, key: string | undefined) =>
+    key ? map[key] || key : '';
 
   const listFromMulti = (values: string[], map: Record<string, string>) =>
     values.map((v) => map[v] || v).filter(Boolean).join(', ');
 
   const confirmedAnswers = [
-    { label: 'Estrutura', value: labelMaps.estrutura[answers.estrutura] },
-    { label: 'Lojas', value: labelMaps.lojas[answers.lojas] },
-    { label: 'Vendas/mês', value: labelMaps.vendas_mes[answers.vendas_mes] },
-    { label: 'Estoque', value: labelMaps.estoque[answers.estoque] },
-    { label: 'Equipe', value: labelMaps.equipe[answers.equipe] },
+    { label: 'Estrutura', value: getLabel(labelMaps.estrutura, answers.estrutura) },
+    { label: 'Lojas', value: getLabel(labelMaps.lojas, answers.lojas) },
+    { label: 'Vendas/mês', value: getLabel(labelMaps.vendas_mes, answers.vendas_mes) },
+    { label: 'Estoque', value: getLabel(labelMaps.estoque, answers.estoque) },
+    { label: 'Equipe', value: getLabel(labelMaps.equipe, answers.equipe) },
     { label: 'Origem', value: listFromMulti(answers.origem || [], labelMaps.origem) },
-    { label: 'Anúncios pagos', value: labelMaps.ads_flow[answers.ads_flow] },
-    { label: 'Investimento', value: labelMaps.investimento_ads[answers.investimento_ads] },
-    { label: 'Marketing', value: labelMaps.estrutura_mkt[answers.estrutura_mkt] },
-    { label: 'CRM', value: labelMaps.crm[answers.crm] },
-    { label: 'Tempo resposta', value: labelMaps.tempo_resposta[answers.tempo_resposta] },
-    { label: 'Cenário', value: labelMaps.cenario[answers.cenario] },
-    { label: 'Fricção', value: labelMaps.friccao[answers.friccao] },
+    { label: 'Anúncios pagos', value: getLabel(labelMaps.ads_flow, answers.ads_flow) },
+    { label: 'Investimento', value: getLabel(labelMaps.investimento_ads, answers.investimento_ads) },
+    { label: 'Marketing', value: getLabel(labelMaps.estrutura_mkt, answers.estrutura_mkt) },
+    { label: 'CRM', value: getLabel(labelMaps.crm, answers.crm) },
+    { label: 'Tempo resposta', value: getLabel(labelMaps.tempo_resposta, answers.tempo_resposta) },
+    { label: 'Cenário', value: getLabel(labelMaps.cenario, answers.cenario) },
+    { label: 'Fricção', value: getLabel(labelMaps.friccao, answers.friccao) },
     { label: 'Métricas', value: listFromMulti(answers.metricas || [], labelMaps.metricas) },
-    { label: 'Prazo', value: labelMaps.prazo[answers.prazo] },
+    { label: 'Prazo', value: getLabel(labelMaps.prazo, answers.prazo) },
     { label: 'Marcas', value: selectedBrands.length ? selectedBrands.join(', ') : '' },
   ].filter((item) => item.value);
 
@@ -1135,12 +1138,6 @@ function Resultado() {
                   <h3 className="text-lg font-bold text-white">Análise do site</h3>
                   <p className="text-sm text-gray-400">Resultados técnicos baseados no site informado.</p>
                 </div>
-                {psiStatus === 'loading' && (
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analisando...
-                  </div>
-                )}
               </div>
 
               {psiStatus === 'error' && (

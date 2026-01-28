@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, BarChart2, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
