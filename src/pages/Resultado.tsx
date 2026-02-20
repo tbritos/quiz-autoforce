@@ -6,7 +6,7 @@ import {
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, 
   CheckCircle2,
-  Download, Bot, Loader2
+  Download, Loader2
 } from 'lucide-react';
 
 function Resultado() {
