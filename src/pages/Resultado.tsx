@@ -530,10 +530,10 @@ function Resultado() {
       tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
       urgency: "Automação Recomendada",
       msg: "Para crescer sua operação sem inchar a equipe, a melhor estratégia hoje é Inteligência Artificial. Conheça a Lara, que atende seus leads 24h.",
-      ctaTitle: "Conhecer Lara (IA de Vendas)",
-      ctaSub: "Ver demonstração interativa",
-      ctaLink: "https://linkforce.cc/diagnostico_lara",
-      ctaIcon: Bot,
+      ctaTitle: "Falar com Especialista AutoForce",
+      ctaSub: "Plano estratégico em uma conversa",
+      ctaLink: "https://linkforce.cc/diagnostico_sdr",
+      ctaIcon: Zap,
       buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
   };
