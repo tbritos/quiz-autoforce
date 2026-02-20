@@ -17,7 +17,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Manrope', 'sans-serif'],
+        sans: ['Titillium Web', 'sans-serif'],
         heading: ['Titillium Web', 'sans-serif'],
       },
       backgroundImage: {

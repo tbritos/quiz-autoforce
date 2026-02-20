@@ -110,17 +110,17 @@ function Home() {
             </p>
           </div>
 
-          <div className="logo-marquee overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-            <div className="logo-marquee-track flex w-max items-center gap-6 md:gap-8">
+          <div className="logo-marquee overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+            <div className="logo-marquee-track flex w-max items-center gap-4 md:gap-6">
               {[...logos, ...logos].map((logo, index) => (
                 <div
                   key={`${logo}-${index}`}
-                  className="flex items-center justify-center h-16 md:h-20 px-6 md:px-8 rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+                  className="flex items-center justify-center h-14 md:h-16 w-[140px] md:w-[165px] px-4 rounded-2xl bg-white ring-1 ring-black/5 shadow-[0_8px_18px_rgba(0,0,0,0.26)]"
                 >
                   <img
                     src={logo}
                     alt={`Logo cliente ${index + 1}`}
-                    className="h-8 md:h-10 max-w-[140px] md:max-w-[160px] object-contain"
+                    className="h-7 md:h-8 max-w-[120px] md:max-w-[140px] object-contain opacity-100"
                     loading="lazy"
                   />
                 </div>
@@ -150,13 +150,13 @@ function Home() {
       </section>
 
       {/* --- PARCEIROS OFICIAIS --- */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 py-20">
+      <section className="official-partners relative z-10 max-w-5xl mx-auto px-4 py-14">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-heading font-bold text-white">Parceiros oficiais</h2>
           <p className="text-gray-400 mt-2">Atendemos as maiores montadoras e associações do Brasil</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           {[
             { src: '/selos/selo-homologado-stellantis.svg', alt: 'Selo homologado Stellantis' },
             { src: '/selos/selo-homologado-renault.svg', alt: 'Selo homologado Renault' },
@@ -171,12 +171,12 @@ function Home() {
           ].map((partner) => (
             <div
               key={partner.src}
-              className="group rounded-2xl bg-white/5 p-4 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all duration-300 hover:bg-white/10 hover:shadow-[0_12px_35px_rgba(20,64,255,0.25)]"
+              className="official-partner-item group w-full mx-auto rounded-lg bg-[#060b16] p-1 border border-white/5 shadow-[0_4px_10px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_14px_rgba(20,64,255,0.16)]"
             >
               <img
                 src={partner.src}
                 alt={partner.alt}
-                className="w-full h-auto object-contain opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+                className="official-partner-image w-full h-auto object-contain rounded-md opacity-95 transition-opacity duration-300 group-hover:opacity-100"
                 loading="lazy"
               />
             </div>

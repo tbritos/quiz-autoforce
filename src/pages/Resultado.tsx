@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { 
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, 
-  TrendingUp, Clock, DollarSign, AlertTriangle, CheckCircle2,
-  BarChart3, Download, XCircle, CheckCircle, Bot, Loader2
+  CheckCircle2,
+  Download, Bot, Loader2
 } from 'lucide-react';
 
 function Resultado() {
@@ -16,6 +16,8 @@ function Resultado() {
   const isPreview = searchParams.get('preview') === '1';
   const testSite = searchParams.get('testsite');
   const previewAnswers = {
+    site_cliente: 'https://site.autoforce.com/',
+    ticket_medio: '100000',
     investimento_ads: '30-70k',
     vendas_mes: '100-199',
     crm: 'crm-avancado',
@@ -62,7 +64,18 @@ function Resultado() {
     scores: { performance: number | null; accessibility: number | null; seo: number | null; bestPractices: number | null };
     metrics: { lcp?: string; cls?: string; inp?: string; tbt?: string };
   } | null>(null);
+  const [serpStatus, setSerpStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [serpError, setSerpError] = useState<string | null>(null);
+  const [serpKeywords, setSerpKeywords] = useState<Array<{
+    keyword: string;
+    source?: string;
+    position?: number | null;
+  }>>([]);
   const [loadingStep, setLoadingStep] = useState(0);
+  void psiError;
+  void serpStatus;
+  void serpError;
+  void serpKeywords;
   
   const [formData, setFormData] = useState({ 
     name: isPreview ? 'Teste Preview' : '',
@@ -70,7 +83,7 @@ function Resultado() {
     phone: isPreview ? '(11) 99999-9999' : '',
     email: isPreview ? 'teste@empresa.com.br' : '',
     cnpj: isPreview ? '12.345.678/0001-90' : '',
-    website: isPreview ? 'www.empresa.com.br' : testSite || '',
+    website: isPreview ? 'https://site.autoforce.com/' : testSite || answers.site_cliente || '',
     consent: isPreview ? true : false,
   });
 
@@ -506,8 +519,8 @@ function Resultado() {
       tagColor: "bg-green-500/10 text-green-500 border border-green-500/20",
       urgency: "Otimização Avançada",
       msg: "Identificamos que sua operação tem a estrutura ideal para escalar. Você tem prioridade para falar com nosso consultor especialista.",
-      ctaTitle: "Falar com Consultor (SDR)",
-      ctaSub: "Prioridade na agenda",
+      ctaTitle: "Falar com Especialista AutoForce",
+      ctaSub: "Plano estratégico em uma conversa",
       ctaLink: "https://linkforce.cc/diagnostico_sdr",
       ctaIcon: Zap,
       buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
@@ -598,57 +611,16 @@ function Resultado() {
 
   const content = getContent();
   const priorities = getPriorities();
-  const checklist = getChecklist();
   const insights = getInsights();
   const psiAlerts = getPsiAlerts();
   const executive = getExecutiveSummary();
-  const actionPlan = getActionPlan();
-  const ctaHook = (() => {
-    const worstPsi = getWorstPsiScore();
-    if (typeof worstPsi === 'number' && worstPsi < 50) {
-      return 'Seu site está em nível crítico e isso afeta diretamente conversão e CPL.';
-    }
-    if (psiAlerts.length > 0) {
-      return 'Existem pontos técnicos que estão reduzindo sua performance agora.';
-    }
-    return 'Com alguns ajustes, é possível gerar ganho imediato em vendas.';
-  })();
-
-  const getCtaCopy = () => {
-    const worstPsi = getWorstPsiScore();
-    const perf = psiData?.scores.performance ?? null;
-    const seo = psiData?.scores.seo ?? null;
-
-    if (typeof worstPsi === 'number' && worstPsi < 50) {
-      return {
-        title: 'Corrigir pontos críticos agora',
-        sub: 'Plano rápido para recuperar conversão e reduzir CPL',
-      };
-    }
-    if (typeof perf === 'number' && perf < 50) {
-      return {
-        title: 'Acelerar o site e recuperar leads',
-        sub: 'Reduza o tempo de carregamento e melhore conversão',
-      };
-    }
-    if (typeof seo === 'number' && seo < 60) {
-      return {
-        title: 'Aumentar tráfego orgânico em 30 dias',
-        sub: 'Ajustes técnicos e conteúdo que geram demanda',
-      };
-    }
-    if (answers.tempo_resposta && ['2h', '24h', '24h+'].includes(answers.tempo_resposta)) {
-      return {
-        title: 'Reduzir SLA e vender mais rápido',
-        sub: 'Organize atendimento e responda em minutos',
-      };
-    }
-    return {
-      title: content.ctaTitle,
-      sub: content.ctaSub,
-    };
-  };
-
+  void getChecklist;
+  void getActionPlan;
+  void getPriorityImpact;
+  void priorities;
+  void insights;
+  void psiAlerts;
+  void executive;
   const labelMaps: Record<string, Record<string, string>> = {
     estrutura: {
       concessionaria: 'Concessionária autorizada',
@@ -724,6 +696,7 @@ function Resultado() {
 
   const confirmedAnswers = [
     { label: 'Estrutura', value: getLabel(labelMaps.estrutura, answers.estrutura) },
+    { label: 'Site', value: answers.site_cliente || '' },
     { label: 'Lojas', value: getLabel(labelMaps.lojas, answers.lojas) },
     { label: 'Vendas/mês', value: getLabel(labelMaps.vendas_mes, answers.vendas_mes) },
     { label: 'Estoque', value: getLabel(labelMaps.estoque, answers.estoque) },
@@ -740,6 +713,212 @@ function Resultado() {
     { label: 'Prazo', value: getLabel(labelMaps.prazo, answers.prazo) },
     { label: 'Marcas', value: selectedBrands.length ? selectedBrands.join(', ') : '' },
   ].filter((item) => item.value);
+  void confirmedAnswers;
+  void score;
+
+  const maturityOrder = ['BASICO', 'MEDIO', 'AVANCADO', 'CHAMPION'] as const;
+  const maturityData: Record<(typeof maturityOrder)[number], { rate: number; description: string }> = {
+    BASICO: {
+      rate: 1.5,
+      description: 'Equipe sem processo estruturado, CRM inconsistente e atendimento reativo.',
+    },
+    MEDIO: {
+      rate: 3.75,
+      description: 'Processo comercial basico com uso parcial de CRM e sem SLA definido.',
+    },
+    AVANCADO: {
+      rate: 5.0,
+      description: '',
+    },
+    CHAMPION: {
+      rate: 6.25,
+      description: 'Operacao com automacoes, SLA agressivo, CRM em tempo real e alta previsibilidade.',
+    },
+  };
+
+  const pageSpeedBands = [
+    {
+      min: 0,
+      max: 39,
+      label: '0-39',
+      speed: 'Muito lento',
+      impact: 'Alta taxa de rejeicao, experiencia ruim.',
+      userToLeadRate: 0.01,
+    },
+    {
+      min: 40,
+      max: 49,
+      label: '40-49',
+      speed: 'Lento',
+      impact: 'Frustracao do usuario, menor engajamento.',
+      userToLeadRate: 0.02,
+    },
+    {
+      min: 50,
+      max: 70,
+      label: '50-70',
+      speed: 'Mediano',
+      impact: 'Experiencia aceitavel, mas ainda ha atrito.',
+      userToLeadRate: 0.0325,
+    },
+    {
+      min: 71,
+      max: 89,
+      label: '71-89',
+      speed: 'Rapido',
+      impact: 'Boa experiencia, pouca friccao.',
+      userToLeadRate: 0.05,
+    },
+    {
+      min: 90,
+      max: 100,
+      label: '90-100',
+      speed: 'Muito rapido',
+      impact: 'Experiencia fluida, maxima conversao.',
+      userToLeadRate: 0.09,
+    },
+  ] as const;
+
+  const toMoney = (value: number) =>
+    value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+  const toPct = (value: number) =>
+    `${(value * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+
+  const parseInvestment = (range?: string) => {
+    switch (range) {
+      case 'ate-3k': return 3000;
+      case '3-10k': return 6500;
+      case '10-30k': return 20000;
+      case '30-70k': return 50000;
+      case '70k+': return 80000;
+      default: return 10000;
+    }
+  };
+
+  const estimateTrafficFromContext = () => {
+    const base = parseInvestment(answers.investimento_ads);
+    let users = Math.round(base * 1.2);
+    const origem = answers.origem || [];
+    if (origem.includes('ads')) users = Math.round(users * 1.2);
+    if (origem.includes('organic')) users = Math.round(users * 1.1);
+    if (origem.includes('portals')) users = Math.round(users * 1.15);
+    if (answers.lojas === '4-7') users = Math.round(users * 1.2);
+    if (answers.lojas === '8+') users = Math.round(users * 1.35);
+    return Math.max(4000, users);
+  };
+
+  const parseTicketFromAnswer = (rawValue: any) => {
+    const text = String(rawValue || '').trim();
+    if (!text) return null;
+    const digits = text.replace(/[^\d]/g, '');
+    if (!digits) return null;
+    const numeric = Number(digits);
+    if (!Number.isFinite(numeric) || numeric <= 0) return null;
+    return numeric;
+  };
+
+  const estimateTicket = () => {
+    if (answers.estrutura === 'multimarcas') return 100000;
+    if (answers.estrutura === 'concessionaria') return 160000;
+    if (answers.estrutura === 'grupo') return 140000;
+    return 120000;
+  };
+
+  const getPageSpeedBand = (perfScore: number | null) => {
+    const safe = perfScore === null ? 45 : Math.max(0, Math.min(100, perfScore));
+    return pageSpeedBands.find((b) => safe >= b.min && safe <= b.max) || pageSpeedBands[1];
+  };
+
+  const conversionBySpeed = (perfScore: number | null) => getPageSpeedBand(perfScore).userToLeadRate;
+
+  const getCurrentMaturity = (): (typeof maturityOrder)[number] => {
+    let points = 0;
+    if (answers.crm === 'crm-avancado') points += 2;
+    else if (answers.crm === 'crm-basico') points += 1;
+    if (answers.tempo_resposta === '5min') points += 2;
+    else if (answers.tempo_resposta === '30min') points += 1;
+    if (answers.estrutura_mkt === 'hibrido' || answers.estrutura_mkt === 'interno') points += 1;
+    if (answers.cenario === 'previsivel') points += 1;
+    if (answers.cenario === 'abaixo' || answers.cenario === 'sem-dados') points -= 1;
+    if (points <= 1) return 'BASICO';
+    if (points <= 3) return 'MEDIO';
+    if (points <= 5) return 'AVANCADO';
+    return 'CHAMPION';
+  };
+
+  const nextMaturity = (current: (typeof maturityOrder)[number], tier: 'HOT' | 'WARM') => {
+    const idx = maturityOrder.indexOf(current);
+    const jump = tier === 'HOT' ? 2 : 1;
+    return maturityOrder[Math.min(maturityOrder.length - 1, idx + jump)];
+  };
+
+  const comparisonModel = (() => {
+    const visitsCurrent = estimateTrafficFromContext();
+    const ticket = parseTicketFromAnswer(answers.ticket_medio) ?? estimateTicket();
+    const invested = parseInvestment(answers.investimento_ads);
+
+    const currentPerf = psiData?.scores.performance ?? 45;
+    const autoforcePerf = 90;
+
+    const currentVisitToLead = conversionBySpeed(currentPerf);
+    const autoforceVisitToLead = Math.min(0.09, Math.max(conversionBySpeed(autoforcePerf), currentVisitToLead * 1.5));
+    const currentSpeedBand = getPageSpeedBand(currentPerf);
+    const futureSpeedBand = getPageSpeedBand(autoforcePerf);
+
+    const currentLevel = getCurrentMaturity();
+    const targetLevel = nextMaturity(currentLevel, qualification);
+    const currentLeadToSale = maturityData[currentLevel].rate / 100;
+    const autoforceLeadToSale = maturityData[targetLevel].rate / 100;
+
+    const visitsFuture = Math.round(visitsCurrent * (autoforcePerf >= 90 ? 1.6 : 1.35));
+    const leadsCurrent = Math.round(visitsCurrent * currentVisitToLead);
+    const leadsFuture = Math.round(visitsFuture * autoforceVisitToLead);
+    const salesCurrent = Math.max(1, Math.round(leadsCurrent * currentLeadToSale));
+    const salesFuture = Math.max(salesCurrent + 1, Math.round(leadsFuture * autoforceLeadToSale));
+
+    const revenueCurrent = salesCurrent * ticket;
+    const revenueFuture = salesFuture * ticket;
+    const costCurrent = invested + 1450;
+    const costFuture = invested + 997;
+
+    return {
+      current: {
+        level: currentLevel,
+        levelRate: currentLeadToSale,
+        speed: currentPerf,
+        speedBand: currentSpeedBand,
+        visitToLead: currentVisitToLead,
+        visits: visitsCurrent,
+        leads: leadsCurrent,
+        sales: salesCurrent,
+        ticket,
+        revenue: revenueCurrent,
+        cost: costCurrent,
+        roas: revenueCurrent / Math.max(invested, 1),
+      },
+      future: {
+        level: targetLevel,
+        levelRate: autoforceLeadToSale,
+        speed: autoforcePerf,
+        speedBand: futureSpeedBand,
+        visitToLead: autoforceVisitToLead,
+        visits: visitsFuture,
+        leads: leadsFuture,
+        sales: salesFuture,
+        ticket,
+        revenue: revenueFuture,
+        cost: costFuture,
+        roas: revenueFuture / Math.max(invested, 1),
+      },
+      gain: {
+        leads: leadsFuture - leadsCurrent,
+        sales: salesFuture - salesCurrent,
+        revenue: revenueFuture - revenueCurrent,
+        cost: costCurrent - costFuture,
+      },
+    };
+  })();
 
   const getScoreStyle = (value: number | null) => {
     if (value === null || value === undefined) {
@@ -781,6 +960,7 @@ function Resultado() {
       badgeText: 'Crítico',
     };
   };
+  void getScoreStyle;
 
   function getPsiAlerts() {
     if (!psiData) return [];
@@ -814,6 +994,17 @@ function Resultado() {
     return `https://${trimmed}`;
   };
 
+  const getDomainFromWebsite = (rawUrl: string) => {
+    try {
+      const normalized = normalizeUrl(rawUrl);
+      if (!normalized) return '';
+      const url = new URL(normalized);
+      return url.hostname.replace(/^www\./i, '').toLowerCase();
+    } catch {
+      return '';
+    }
+  };
+
   const isValidWebsiteInput = (rawUrl: string) => {
     const trimmed = rawUrl.trim();
     if (!trimmed) return false;
@@ -838,23 +1029,104 @@ function Resultado() {
     }
   };
 
+  const currentDomain = getDomainFromWebsite(formData.website || testSite || answers.site_cliente || '') || 'seusite.com.br';
+  const roasLift = comparisonModel.future.roas / Math.max(comparisonModel.current.roas, 0.01);
+  const monthlyRevenueGain = Math.max(0, comparisonModel.gain.revenue);
+  const yearlyRevenueGain = monthlyRevenueGain * 12;
+  const psiSummary = [
+    { key: 'performance', label: 'Performance', value: psiData?.scores.performance ?? comparisonModel.current.speed },
+    { key: 'seo', label: 'SEO', value: psiData?.scores.seo ?? null },
+    { key: 'accessibility', label: 'Acessibilidade', value: psiData?.scores.accessibility ?? null },
+    { key: 'bestPractices', label: 'Boas praticas', value: psiData?.scores.bestPractices ?? null },
+  ];
+
+  const getPsiBadgeStyle = (value: number | null) => {
+    if (value === null || value === undefined) {
+      return {
+        ring: 'border-slate-300',
+        bg: 'bg-slate-100',
+        text: 'text-slate-400',
+      };
+    }
+    if (value >= 90) {
+      return {
+        ring: 'border-emerald-500',
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-600',
+      };
+    }
+    if (value >= 50) {
+      return {
+        ring: 'border-amber-500',
+        bg: 'bg-amber-50',
+        text: 'text-amber-600',
+      };
+    }
+    return {
+      ring: 'border-rose-500',
+      bg: 'bg-rose-50',
+      text: 'text-rose-600',
+    };
+  };
+  const currentSpeedStyle = getPsiBadgeStyle(comparisonModel.current.speed);
+  const futureSpeedStyle = getPsiBadgeStyle(comparisonModel.future.speed);
+  const comparisonRows = [
+    {
+      label: 'Visitas mensais',
+      current: comparisonModel.current.visits.toLocaleString('pt-BR'),
+      future: comparisonModel.future.visits.toLocaleString('pt-BR'),
+    },
+    {
+      label: 'PageSpeed',
+      current: String(comparisonModel.current.speed),
+      future: String(comparisonModel.future.speed),
+    },
+    {
+      label: 'Conversão (visitas para leads)',
+      current: toPct(comparisonModel.current.visitToLead),
+      future: toPct(comparisonModel.future.visitToLead),
+    },
+    {
+      label: 'Leads',
+      current: comparisonModel.current.leads.toLocaleString('pt-BR'),
+      future: comparisonModel.future.leads.toLocaleString('pt-BR'),
+    },
+    {
+      label: 'Maturidade comercial',
+      current: comparisonModel.current.level,
+      future: comparisonModel.future.level,
+    },
+    {
+      label: 'Conversão (leads para vendas)',
+      current: toPct(comparisonModel.current.levelRate),
+      future: toPct(comparisonModel.future.levelRate),
+    },
+    {
+      label: 'Vendas',
+      current: comparisonModel.current.sales.toLocaleString('pt-BR'),
+      future: comparisonModel.future.sales.toLocaleString('pt-BR'),
+    },
+    {
+      label: 'Ticket médio',
+      current: toMoney(comparisonModel.current.ticket),
+      future: toMoney(comparisonModel.future.ticket),
+    },
+    {
+      label: 'Faturamento',
+      current: toMoney(comparisonModel.current.revenue),
+      future: toMoney(comparisonModel.future.revenue),
+    },
+  ];
+
   useEffect(() => {
     if (step !== 'result') return;
-    const website = normalizeUrl(formData.website || testSite || '');
+    const website = isPreview
+      ? 'https://site.autoforce.com/'
+      : normalizeUrl(formData.website || testSite || '');
     if (!website) return;
 
-    if (isPreview) {
-      setPsiData({
-        url: website,
-        scores: { performance: 72, accessibility: 88, seo: 80, bestPractices: 92 },
-        metrics: { lcp: '2.8 s', cls: '0.09', inp: '180 ms', tbt: '210 ms' },
-      });
-      setPsiStatus('ready');
-      return;
-    }
-
     const apiKey = import.meta.env.VITE_PSI_API_KEY as string | undefined;
-    if (!apiKey) {
+    if (!apiKey && !isPreview) {
       setPsiStatus('error');
       setPsiError('Configure a chave VITE_PSI_API_KEY para ativar a análise do site.');
       return;
@@ -872,7 +1144,9 @@ function Resultado() {
         params.append('category', 'accessibility');
         params.append('category', 'best-practices');
         params.append('category', 'seo');
-        params.set('key', apiKey);
+        if (apiKey) {
+          params.set('key', apiKey);
+        }
 
         const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`);
         if (!res.ok) {
@@ -921,7 +1195,44 @@ function Resultado() {
     };
 
     run();
-  }, [step, formData.website, isPreview]);
+  }, [step, formData.website, testSite, isPreview]);
+
+  useEffect(() => {
+    if (step !== 'result') return;
+
+    const domain = getDomainFromWebsite(
+      isPreview ? 'https://site.autoforce.com/' : (formData.website || testSite || '')
+    );
+    if (!domain) return;
+
+    const run = async () => {
+      try {
+        setSerpStatus('loading');
+        setSerpError(null);
+
+        const res = await fetch(`/api/serp-keywords?domain=${encodeURIComponent(domain)}`);
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json?.error || `HTTP ${res.status}`);
+        }
+
+        const rows = (json?.keywords || []).map((item: any) => ({
+          keyword: item.keyword,
+          source: item.source || null,
+          position: typeof item.position === 'number' ? item.position : null,
+        }));
+
+        setSerpKeywords(rows.slice(0, 12));
+        setSerpStatus('ready');
+      } catch (error: any) {
+        const apiMessage = error?.message || error?.toString?.();
+        setSerpStatus('error');
+        setSerpError(apiMessage ? `Erro SerpApi: ${apiMessage}` : 'Nao foi possivel consultar dados da SerpApi.');
+      }
+    };
+
+    run();
+  }, [step, formData.website, testSite, isPreview]);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -1063,21 +1374,22 @@ function Resultado() {
             </div>
           ) : (
           <>
-          <div className="flex justify-between items-center mb-10">
-            <div>
+          <div className="mb-8 rounded-3xl border border-white/10 bg-gradient-to-br from-autoforce-blue/20 via-autoforce-dark to-autoforce-dark p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div>
               <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 ${content.tagColor}`}>
                 <CheckCircle2 className="w-3 h-3" /> {content.tag}
               </div>
-              <h1 className="text-3xl font-heading font-bold mb-2 text-white">
+              <h1 className="text-2xl md:text-4xl font-heading font-bold mb-2 text-white">
                 Diagnóstico Digital
               </h1>
-              <p className="text-gray-400">Empresa: <span className="text-white font-bold">{formData.website || formData.name}</span></p>
-            </div>
+              <p className="text-gray-300">Empresa analisada: <span className="text-white font-semibold">{formData.website || formData.name}</span></p>
+              </div>
             
             <button 
               onClick={handleDownloadPDF}
               disabled={isGeneratingPdf}
-              className="no-print flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-wait"
+              className="no-print inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-wait"
             >
               {isGeneratingPdf ? (
                  <>
@@ -1089,310 +1401,218 @@ function Resultado() {
                  </>
               )}
             </button>
-          </div>
-
-          <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h2 className="text-lg font-bold text-white mb-4">Resumo executivo</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl bg-black/20 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Principal risco</div>
-                <div className="text-sm text-white">{executive.risk}</div>
-              </div>
-              <div className="rounded-xl bg-black/20 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Impacto</div>
-                <div className="text-sm text-white">{executive.impact}</div>
-              </div>
-              <div className="rounded-xl bg-black/20 border border-white/10 p-4">
-                <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Ação urgente</div>
-                <div className="text-sm text-white">{executive.action}</div>
-              </div>
             </div>
           </div>
 
-          {confirmedAnswers.length > 0 && (
-            <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <h3 className="text-lg font-bold text-white">Resumo das suas respostas</h3>
-                <span className="text-xs uppercase tracking-widest text-gray-400">
-                  {confirmedAnswers.length} pontos confirmados
-                </span>
+
+
+
+          <div className="mb-8 rounded-3xl border border-white/10 bg-[#e7eaf7] text-[#0f172a] p-4 md:p-6 shadow-[0_24px_70px_rgba(2,6,23,0.35)]">
+            <div className="mb-5">
+              <h2 className="text-2xl md:text-4xl font-heading font-bold text-center text-[#0f2a9b]">
+                Comparativo de performance com AutoForce
+              </h2>
+            </div>
+
+            <div className="mb-3 grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+              <div className="rounded-xl border border-slate-300 bg-white p-4 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(23,49,207,0.15)]">
+                <p className="text-xs uppercase tracking-wider text-slate-500">Média de visitas por mês</p>
+                <p className="mt-1 text-3xl font-bold text-[#1731cf]">{comparisonModel.current.visits.toLocaleString('pt-BR')}</p>
+                <p className="text-sm text-slate-600 mt-1">Analisamos seu site e identificamos esta média de visitas por mês.</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {confirmedAnswers.map((item) => (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white"
-                  >
-                    <span className="text-gray-400 uppercase tracking-widest">{item.label}:</span>
-                    <span className="font-semibold">{item.value}</span>
-                  </span>
-                ))}
+              <div className="rounded-xl border border-slate-300 bg-white p-4 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(23,49,207,0.15)]">
+                <p className="text-xs uppercase tracking-wider text-amber-700">Maturidade comercial atual</p>
+                <p className="mt-1 text-2xl font-bold text-amber-800">{comparisonModel.current.level}</p>
+                <p className="text-sm text-amber-700 mt-1">Nível estimado a partir das respostas do diagnóstico.</p>
+                <p className="text-sm font-semibold text-amber-800 mt-2">
+                  Conversão média deste nível: {toPct(maturityData[comparisonModel.current.level].rate / 100)}.
+                  Em média, a cada 100 leads, {Math.round(maturityData[comparisonModel.current.level].rate)} viram vendas.
+                </p>
+                {maturityData[comparisonModel.current.level].description ? (
+                  <p className="text-sm text-amber-700 mt-1">{maturityData[comparisonModel.current.level].description}</p>
+                ) : null}
               </div>
             </div>
-          )}
 
-          <div className="mb-8">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div>
-                  <h3 className="text-lg font-bold text-white">Análise do site</h3>
-                  <p className="text-sm text-gray-400">Resultados técnicos baseados no site informado.</p>
-                </div>
+            <div className="mb-3 rounded-xl border border-slate-300 bg-white p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(23,49,207,0.15)]">
+              <p className="text-xs uppercase tracking-wider text-slate-500">PageSpeed do seu site</p>
+              <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {psiSummary.map((item) => {
+                  const style = getPsiBadgeStyle(item.value);
+                  return (
+                    <div key={item.key} className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(23,49,207,0.12)]">
+                      <div className={`h-14 w-14 rounded-full border-4 ${style.ring} ${style.bg} flex items-center justify-center text-base font-bold ${style.text}`}>
+                        {item.value ?? '--'}
+                      </div>
+                      <span className="text-xs text-slate-700 mt-2 text-center">{item.label}</span>
+                    </div>
+                  );
+                })}
               </div>
-
-              {psiStatus === 'error' && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-                  <div className="font-semibold text-red-300">Não conseguimos acessar esse site.</div>
-                  <div className="mt-1 text-red-200/80">
-                    Confira o link digitado (ex.: www.suaempresa.com.br) e tente novamente.
-                  </div>
-                  {psiError && <div className="mt-2 text-xs text-red-300/80">{psiError}</div>}
-                  <button
-                    onClick={() => setStep('locked')}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-400/20 transition-colors"
-                  >
-                    Corrigir site informado
-                  </button>
-                </div>
-              )}
-
-              {psiStatus === 'ready' && psiData && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {[
-                    { label: 'Score Digital', value: Math.round(score) },
-                    { label: 'Performance', value: psiData.scores.performance },
-                    { label: 'Acessibilidade', value: psiData.scores.accessibility },
-                    { label: 'Boas práticas', value: psiData.scores.bestPractices },
-                    { label: 'SEO', value: psiData.scores.seo },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-                      <div className="text-xs uppercase tracking-widest text-gray-400">{item.label}</div>
-                      <div
-                        className={`mt-3 mx-auto w-20 h-20 rounded-full ring-2 ${getScoreStyle(item.value).ring} ${getScoreStyle(item.value).bg} flex items-center justify-center`}
-                      >
-                        <div className={`text-2xl font-black tabular-nums ${getScoreStyle(item.value).text}`}>
-                          {item.value ?? '-'}
-                        </div>
-                      </div>
-                      <div
-                        className={`mt-3 inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-widest ${getScoreStyle(item.value).badge}`}
-                      >
-                        {getScoreStyle(item.value).badgeText}
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                    <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-                      <div className="text-sm text-gray-400">Tempo até o maior elemento visível carregar:</div>
-                      <div className="text-lg font-semibold text-white mt-1">{psiData.metrics.lcp || '-'}</div>
-                    </div>
-                    <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-                      <div className="text-sm text-gray-400">Estabilidade visual da página (saltos de layout):</div>
-                      <div className="text-lg font-semibold text-white mt-1">{psiData.metrics.cls || '-'}</div>
-                    </div>
-                    <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-                      <div className="text-sm text-gray-400">Tempo de resposta às interações do usuário:</div>
-                      <div className="text-lg font-semibold text-white mt-1">{psiData.metrics.inp || '-'}</div>
-                    </div>
-                    <div className="rounded-xl bg-black/20 border border-white/10 p-3">
-                      <div className="text-sm text-gray-400">Tempo total em que a página fica bloqueada:</div>
-                      <div className="text-lg font-semibold text-white mt-1">{psiData.metrics.tbt || '-'}</div>
-                    </div>
-                  </div>
-
-                  {[
-                    { label: 'Performance', value: psiData.scores.performance },
-                    { label: 'Acessibilidade', value: psiData.scores.accessibility },
-                    { label: 'Boas práticas', value: psiData.scores.bestPractices },
-                    { label: 'SEO', value: psiData.scores.seo },
-                  ].some((item) => item.value !== null && item.value < 50) && (
-                    <div className="md:col-span-4 mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-                        <div>
-                          <div className="text-sm font-bold text-red-300">Atenção: pontos críticos detectados</div>
-                          <p className="text-sm text-red-200/80 mt-1">
-                            Scores abaixo de 50 indicam problemas sérios que afetam conversão e mídia. Vale priorizar
-                            correções técnicas imediatamente.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {psiStatus === 'ready' && psiData && psiAlerts.length > 0 && (
-                <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-red-300 mb-3">
-                    <AlertTriangle className="w-4 h-4 animate-pulse" />
-                    Atenção imediata no site
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {psiAlerts.map((alert) => (
-                      <div key={alert.label} className="rounded-xl bg-black/20 border border-white/10 p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm font-semibold text-white">{alert.label}</div>
-                          <span
-                            className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                              alert.level === 'critical'
-                                ? 'bg-red-400/15 border-red-400/40 text-red-300'
-                                : 'bg-amber-400/15 border-amber-400/40 text-amber-300'
-                            }`}
-                          >
-                            {alert.level === 'critical' ? 'Crítico' : 'Atenção'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-300 mt-2">{alert.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 mb-8">
-            <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-500/10 via-transparent to-transparent p-6">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <span className="text-gray-200 text-xs font-bold uppercase tracking-widest">
-                  <AlertTriangle className="inline w-3 h-3 mr-1 mb-0.5 text-red-400" /> Riscos e oportunidades identificados
-                </span>
-                <span className="text-[11px] uppercase tracking-widest text-red-300">
-                  {priorities.length + insights.length} pontos críticos
-                </span>
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-slate-300 bg-white p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(23,49,207,0.15)]">
+                <p className="text-xs uppercase tracking-wider text-slate-500">Velocidade e impacto</p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Analisando a performance do seu site, identificamos velocidade <span className="font-semibold">{comparisonModel.current.speedBand.speed}</span> (faixa {comparisonModel.current.speedBand.label}).
+                </p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Impacto: <span className="font-semibold">{comparisonModel.current.speedBand.impact}</span>
+                </p>
               </div>
-              <div className="divide-y divide-red-500/20">
-                {priorities.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3 py-3">
-                    <div className="bg-red-500/15 text-red-300 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
-                      {index + 1}
+              <div className="rounded-xl border border-slate-300 bg-white p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(23,49,207,0.15)]">
+                <p className="text-xs uppercase tracking-wider text-slate-500">Taxa média por performance</p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Com esse PageSpeed, a conversão média estimada (visitas para leads) é de <span className="font-semibold">{toPct(comparisonModel.current.visitToLead)}</span>.
+                </p>
+                <p className="text-sm text-slate-700 mt-1">
+                  Em média, a cada 100 visitas, <span className="font-semibold">{Math.round(comparisonModel.current.visitToLead * 100)}</span> viram leads.
+                </p>
+              </div>
+            </div>
+
+            <div className="md:hidden space-y-3">
+              {comparisonRows.map((row) => (
+                <div key={row.label} className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="text-sm font-semibold text-slate-700 leading-snug break-words">{row.label}</div>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-slate-50 px-3 py-3">
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 truncate">{currentDomain}</div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-800 tabular-nums break-words">{row.current}</div>
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-200">{item}</div>
-                      <div className="text-xs text-gray-400 mt-1">{getPriorityImpact(item)}</div>
+                    <div className="rounded-xl bg-[#edf2ff] px-3 py-3">
+                      <div className="text-[10px] uppercase tracking-wide text-[#3450c7]">AutoForce</div>
+                      <div className="mt-1 text-[15px] font-bold text-[#1731cf] tabular-nums break-words">{row.future}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-              {insights.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-red-500/20 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {insights.map((insight, index) => (
-                    <div key={`${insight.title}-${index}`} className="rounded-xl bg-black/20 border border-white/10 p-3">
-                      <div className="flex items-start gap-2">
-                        {insight.type === 'risk' ? (
-                          <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                        ) : (
-                          <CheckCircle2 className="w-4 h-4 text-autoforce-blue mt-0.5 shrink-0" />
-                        )}
-                        <div>
-                          <div className="text-sm font-semibold text-white">{insight.title}</div>
-                          <p className="text-xs text-gray-400 mt-1">{insight.text}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Plano de ação em 3 passos</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {actionPlan.map((step, index) => (
-                <div key={index} className="rounded-xl bg-black/20 border border-white/10 p-4">
-                  <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Passo {index + 1}</div>
-                  <div className="text-sm text-white">{step}</div>
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-gray-400" /> Auditoria Técnica
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {checklist.map((check, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border border-white/5 rounded-xl">
-                    <span className="text-sm text-gray-300">{check.item}</span>
-                    {check.status ? (
-                      <CheckCircle className="text-green-500 w-5 h-5" />
-                    ) : (
-                      <XCircle className="text-red-500 w-5 h-5" />
-                    )}
-                  </div>
-                ))}
-              </div>
+            <div className="hidden md:block overflow-x-auto rounded-3xl border border-[#b9c7ff] bg-gradient-to-b from-white to-[#f5f8ff] shadow-[0_18px_38px_rgba(23,49,207,0.14)] ring-1 ring-inset ring-white/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_52px_rgba(23,49,207,0.22)]">
+              <table className="w-full min-w-[700px] text-[15px]">
+                <thead>
+                  <tr>
+                    <th className="rounded-tl-2xl p-4 text-left text-white bg-[#1731cf] text-xs uppercase tracking-[0.12em]">Métricas</th>
+                    <th className="p-4 text-center text-white bg-[#3d5eff] text-xs uppercase tracking-[0.12em] border-l border-blue-300/40">
+                      <div className="font-bold">{currentDomain}</div>
+                    </th>
+                    <th className="rounded-tr-2xl p-4 text-center text-white bg-[#1452ff] text-xs uppercase tracking-[0.12em] border-l border-blue-300/40">
+                      <div className="font-bold">Seu site com AutoForce</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Visitas mensais</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{comparisonModel.current.visits.toLocaleString('pt-BR')}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{comparisonModel.future.visits.toLocaleString('pt-BR')}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">PageSpeed</td>
+                    <td className="p-4 text-center">
+                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full border-4 font-bold ${currentSpeedStyle.ring} ${currentSpeedStyle.bg} ${currentSpeedStyle.text}`}>{comparisonModel.current.speed}</div>
+                    </td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff]">
+                      <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full border-4 font-bold ${futureSpeedStyle.ring} ${futureSpeedStyle.bg} ${futureSpeedStyle.text}`}>{comparisonModel.future.speed}</div>
+                    </td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Conversão (visitas para leads)</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{toPct(comparisonModel.current.visitToLead)}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{toPct(comparisonModel.future.visitToLead)}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Leads</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{comparisonModel.current.leads.toLocaleString('pt-BR')}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{comparisonModel.future.leads.toLocaleString('pt-BR')}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Maturidade comercial</td>
+                    <td className="p-4 text-center font-semibold text-slate-800">{comparisonModel.current.level}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf]">{comparisonModel.future.level}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Conversão (leads para vendas)</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{toPct(comparisonModel.current.levelRate)}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{toPct(comparisonModel.future.levelRate)}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Vendas</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{comparisonModel.current.sales.toLocaleString('pt-BR')}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{comparisonModel.future.sales.toLocaleString('pt-BR')}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Ticket médio</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{toMoney(comparisonModel.current.ticket)}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{toMoney(comparisonModel.future.ticket)}</td>
+                  </tr>
+
+                  <tr className="group border-t border-slate-200/70 odd:bg-white even:bg-[#f7f9ff] hover:bg-[#eef3ff] transition-colors">
+                    <td className="p-4 font-semibold text-slate-700 whitespace-nowrap">Faturamento</td>
+                    <td className="p-4 text-center font-semibold text-slate-800 tabular-nums">{toMoney(comparisonModel.current.revenue)}</td>
+                    <td className="p-4 text-center bg-[#e8efff]/90 border-l border-[#cfdbff] font-bold text-[#1731cf] tabular-nums">{toMoney(comparisonModel.future.revenue)}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
-              <div className="grid grid-cols-1 gap-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-gray-400 uppercase">
-                    <Clock size={14} /> Tempo resposta
-                  </div>
-                  <div className="text-2xl font-bold text-white tabular-nums">
-                    {answers.tempo_resposta || '-'}
-                  </div>
-                </div>
-                <div className="h-px bg-white/5"></div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-gray-400 uppercase">
-                    <DollarSign size={14} /> Investimento
-                  </div>
-                  <div className="text-2xl font-bold text-white tabular-nums">
-                    {answers.investimento_ads || '-'}
-                  </div>
-                </div>
-                <div className="h-px bg-white/5"></div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-gray-400 uppercase">
-                    <TrendingUp size={14} /> Volume
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-white tabular-nums">{answers.vendas_mes || '-'}</div>
-                    <div className="text-xs text-gray-500">vendas/mês</div>
-                  </div>
-                </div>
-              </div>
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => window.open(content.ctaLink, '_blank')}
+                className="group relative overflow-hidden w-full max-w-xl rounded-2xl bg-gradient-to-r from-[#2f5dff] to-[#1a8bff] text-white py-5 px-6 font-bold text-lg shadow-[0_18px_38px_rgba(45,91,255,0.5)] hover:from-[#4b74ff] hover:to-[#3ba0ff] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_24px_50px_rgba(45,91,255,0.62)] flex items-center justify-center gap-2"
+              >
+                <span className="pointer-events-none absolute inset-y-0 left-[-30%] w-[30%] -skew-x-12 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-button-sheen" aria-hidden="true" />
+                <content.ctaIcon className="relative w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                <span className="relative">{content.ctaTitle}</span>
+              </button>
             </div>
-          </div>
 
-          {(() => {
-            const cta = getCtaCopy();
-            return (
-          <div className="w-full bg-gradient-to-r from-autoforce-blue/20 to-transparent border border-autoforce-blue/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left shadow-[0_0_40px_rgba(20,64,255,0.1)]">
-            <div className="flex-1">
-              <h3 className="text-2xl font-heading font-bold text-white mb-2">
-                Próximo Passo Recomendado
-              </h3>
-              <p className="text-gray-200 max-w-xl font-semibold mb-2">
-                {ctaHook}
+            <div className="mt-4 mb-3 rounded-2xl border border-emerald-300/60 bg-emerald-50 p-4 text-center">
+              <p className="text-xs uppercase tracking-widest text-emerald-700 font-semibold">Potencial de ganho com AutoForce</p>
+              <p className="mt-1 text-lg md:text-2xl font-bold text-emerald-700">
+                +{toMoney(monthlyRevenueGain)} por mês
               </p>
-              <p className="text-gray-300 max-w-xl">
-                {content.msg}
+              <p className="text-sm text-emerald-800">
+                Projeção anual: <span className="font-bold">{toMoney(yearlyRevenueGain)}</span> em faturamento adicional.
               </p>
-              <p className="text-xs text-gray-400 mt-3">+300 operações já aplicaram esse plano</p>
             </div>
 
-            <button 
-              onClick={() => window.open(content.ctaLink, '_blank')}
-              className={`px-8 py-4 rounded-xl font-bold transition-all shadow-lg flex flex-col items-center justify-center min-w-[280px] group ${content.buttonStyle}`}
-            >
-              <div className="flex items-center gap-2 text-lg">
-                <content.ctaIcon className="w-5 h-5" />
-                <span>{cta.title}</span>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl bg-white border border-slate-300 p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(23,49,207,0.12)]">
+                <p className="text-[11px] uppercase tracking-wider text-slate-500">Ganho de leads/mês</p>
+                <p className="text-2xl font-bold text-[#1731cf]">+{comparisonModel.gain.leads.toLocaleString('pt-BR')}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Mais oportunidades entrando no seu funil todos os meses.</p>
               </div>
-              <span className="text-xs opacity-80 font-normal mt-1">{cta.sub}</span>
-            </button>
-          </div>
-            );
-          })()}
+              <div className="rounded-xl bg-white border border-slate-300 p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(23,49,207,0.12)]">
+                <p className="text-[11px] uppercase tracking-wider text-slate-500">Ganho de vendas/mês</p>
+                <p className="text-2xl font-bold text-[#1731cf]">+{comparisonModel.gain.sales.toLocaleString('pt-BR')}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Mais negócios fechados com processo comercial otimizado.</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-300 p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(23,49,207,0.12)]">
+                <p className="text-[11px] uppercase tracking-wider text-slate-500">Multiplicador de ROAS</p>
+                <p className="text-2xl font-bold text-[#1731cf]">{roasLift.toFixed(1)}x</p>
+                <p className="text-[11px] text-slate-500 mt-1">Mais retorno sobre mídia com o mesmo investimento.</p>
+              </div>
+              <div className="rounded-xl bg-white border border-slate-300 p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(23,49,207,0.12)]">
+                <p className="text-[11px] uppercase tracking-wider text-slate-500">Aumento de faturamento</p>
+                <p className="text-xl md:text-2xl font-bold text-emerald-700 break-words leading-tight">{toMoney(comparisonModel.gain.revenue)}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Diferença direta entre seu cenário atual e o potencial com AutoForce.</p>
+              </div>
+            </div>
 
+            <p className="mt-3 text-xs text-slate-500 text-center">
+              *Projeção baseada nas respostas do diagnóstico, PageSpeed e maturidade comercial.
+            </p>
+          </div>
           <button onClick={() => navigate('/')} className="no-print mt-12 text-gray-500 hover:text-white flex items-center mx-auto text-sm transition-colors">
             <RefreshCw className="w-4 h-4 mr-2" /> Refazer Diagnóstico
           </button>
@@ -1405,3 +1625,4 @@ function Resultado() {
 }
 
 export default Resultado;
+

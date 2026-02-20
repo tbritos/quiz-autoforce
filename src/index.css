@@ -7,7 +7,7 @@
 @layer base {
   body {
     @apply bg-autoforce-dark text-white antialiased;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Titillium Web', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -22,6 +22,10 @@
   
   .animate-slide-up {
     animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-button-sheen {
+    animation: buttonSheen 2.8s ease-in-out infinite;
   }
   
   .glass-card {
@@ -67,6 +71,14 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes buttonSheen {
+  0% { transform: translateX(-140%) skewX(-12deg); opacity: 0; }
+  20% { opacity: 0.45; }
+  50% { transform: translateX(420%) skewX(-12deg); opacity: 0.55; }
+  70% { opacity: 0.2; }
+  100% { transform: translateX(420%) skewX(-12deg); opacity: 0; }
+}
+
 @keyframes logoMarquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -77,6 +89,10 @@
     animation: none;
     transform: translateX(0);
   }
+
+  .animate-button-sheen {
+    animation: none;
+  }
 }
 
 @media print {
@@ -86,5 +102,24 @@
   }
   .print\:hidden {
     display: none !important;
+  }
+}
+
+.official-partners .official-partner-item {
+  width: min(100%, 220px) !important;
+  max-width: 220px !important;
+}
+
+.official-partners .official-partner-image {
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 768px) {
+  .official-partners .official-partner-item {
+    width: min(100%, 170px) !important;
+    max-width: 170px !important;
   }
 }

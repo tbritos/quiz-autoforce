@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, Trophy, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Search, ShieldCheck, Trophy, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- BANCO DE DADOS DAS PERGUNTAS ---
@@ -14,6 +14,14 @@ const QUESTIONS = [
       { label: "Revenda multimarcas", value: "multimarcas" },
       { label: "Grupo misto (concessionária + revenda)", value: "grupo" }
     ]
+  },
+  // 2. Site do cliente
+  {
+    id: 'site_cliente',
+    title: "Qual e o site da sua empresa?",
+    subtitle: "Cole aqui o link do seu site oficial. Use o endereço correto, pois essa analise depende do link informado.",
+    type: 'text',
+    placeholder: "Ex.: www.suaempresa.com.br"
   },
   // 2. Lojas
   {
@@ -41,7 +49,15 @@ const QUESTIONS = [
       { label: "200+", value: "200+" }
     ]
   },
-  // 4. Estoque
+  // 4. Ticket medio
+  {
+    id: 'ticket_medio',
+    title: "Qual o ticket medio de venda do seu negocio?",
+    subtitle: "Considere o valor medio por veiculo vendido.",
+    type: 'text',
+    placeholder: "Ex.: R$ 120.000"
+  },
+  // 5. Estoque
   {
     id: 'estoque',
     title: "Qual o estoque médio disponível no mês?",
@@ -223,6 +239,30 @@ function Diagnostico() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
+  const isValidWebsiteInput = (rawUrl: string) => {
+    const value = (rawUrl || '').trim();
+    if (!value) return false;
+
+    const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+    try {
+      const url = new URL(withProtocol);
+      const host = url.hostname.toLowerCase();
+      if (!host || !host.includes('.')) return false;
+      if (host.includes(' ')) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const formatCurrencyInput = (rawValue: string) => {
+    const digits = (rawValue || '').replace(/\D/g, '');
+    if (!digits) return '';
+    const numeric = Number(digits);
+    if (!Number.isFinite(numeric)) return '';
+    return `R$ ${numeric.toLocaleString('pt-BR')}`;
+  };
+
   const handleSelect = (questionId: string, value: string, type: string) => {
     // SINGLE / CONDITIONAL
     if (type === 'single' || type === 'conditional-sub') {
@@ -265,53 +305,78 @@ function Diagnostico() {
   };
 
   const handleNext = () => {
-    // 1. Validação Geral (exceto multis e condicionais)
-    if (!answers[question.id] && 
-        question.type !== 'multi-max-2' && 
-        question.type !== 'multi-unlimited' && 
-        question.type !== 'conditional-sub') return;
-    
-    // 2. Validação Multipla (Garante pelo menos 1 selecionado)
-    if ((question.type === 'multi-max-2' || question.type === 'multi-unlimited') && 
-        (!answers[question.id] || answers[question.id].length === 0)) {
-        alert("Por favor, selecione pelo menos uma opção.");
+    const finalAnswers = { ...answers };
+
+    if (question.type === 'text') {
+      const value = (finalAnswers[question.id] || '').trim();
+      if (!value) {
+        if (question.id === 'site_cliente') alert("Por favor, cole o link do site da sua empresa.");
+        if (question.id === 'ticket_medio') alert("Por favor, informe o ticket medio.");
         return;
+      }
+      if (question.id === 'site_cliente' && !isValidWebsiteInput(value)) {
+        alert("Site invalido. Use algo como www.suaempresa.com.br");
+        return;
+      }
+      if (question.id === 'ticket_medio') {
+        const numeric = Number(value.replace(/\D/g, ''));
+        if (!Number.isFinite(numeric) || numeric < 1000) {
+          alert("Informe um ticket medio valido.");
+          return;
+        }
+      }
+      finalAnswers[question.id] = value;
     }
-    
-    // 3. Validação Marcas
-    if (question.id === 'estrutura' && 
-       (answers['estrutura'] === 'concessionaria' || answers['estrutura'] === 'grupo') && 
-       selectedBrands.length === 0) {
+
+    // 1. Validacao geral (exceto multis e condicionais)
+    if (!finalAnswers[question.id] &&
+      question.type !== 'multi-max-2' &&
+      question.type !== 'multi-unlimited' &&
+      question.type !== 'conditional-sub' &&
+      question.type !== 'text') return;
+
+    // 2. Validacao multipla (garante pelo menos 1 selecionado)
+    if ((question.type === 'multi-max-2' || question.type === 'multi-unlimited') &&
+      (!finalAnswers[question.id] || finalAnswers[question.id].length === 0)) {
+      alert("Por favor, selecione pelo menos uma opcao.");
+      return;
+    }
+
+    // 3. Validacao marcas
+    if (question.id === 'estrutura' &&
+      (finalAnswers['estrutura'] === 'concessionaria' || finalAnswers['estrutura'] === 'grupo') &&
+      selectedBrands.length === 0) {
       alert("Por favor, selecione pelo menos uma marca.");
       return;
     }
 
-    // 4. Validação da Condicional
+    // 4. Validacao da condicional
     if (question.type === 'conditional-sub') {
-      if (!answers[question.id]) return; 
-      if (answers[question.id] === question.subQuestion?.conditionValue) {
-        if (!answers[question.subQuestion!.id]) {
+      if (!finalAnswers[question.id]) return;
+      if (finalAnswers[question.id] === question.subQuestion?.conditionValue) {
+        if (!finalAnswers[question.subQuestion!.id]) {
           alert("Por favor, selecione a faixa de investimento.");
           return;
         }
       }
     }
 
-    // SALVAR "OUTROS"
-    // Se a pergunta atual for a de métricas e "Outros" estiver marcado, salva o texto
+    // Salvar "Outros" de metricas
     if (question.id === 'metricas') {
-       if (answers['metricas']?.includes('outros')) {
-          answers['metricas_outros_texto'] = otherText;
-       } else {
-          delete answers['metricas_outros_texto'];
-       }
+      if (finalAnswers['metricas']?.includes('outros')) {
+        finalAnswers['metricas_outros_texto'] = otherText;
+      } else {
+        delete finalAnswers['metricas_outros_texto'];
+      }
     }
+
+    setAnswers(finalAnswers);
 
     if (currentStep < QUESTIONS.length - 1) {
       setCurrentStep(curr => curr + 1);
     } else {
-      console.log("Finalizando...", { ...answers, marcas: selectedBrands });
-      navigate('/resultado', { state: { answers, selectedBrands } });
+      console.log("Finalizando...", { ...finalAnswers, marcas: selectedBrands });
+      navigate('/resultado', { state: { answers: finalAnswers, selectedBrands } });
     }
   };
 
@@ -370,38 +435,80 @@ function Diagnostico() {
             )}
           </div>
 
-          <div className="space-y-3">
-            {question.options.map((option) => {
-              // Lógica de seleção (Single vs Multi)
-              const isSelected = 
-                question.type === 'multi-max-2' || question.type === 'multi-unlimited'
-                ? (answers[question.id] || []).includes(option.value)
-                : answers[question.id] === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => handleSelect(question.id, option.value, question.type)}
-                  className={`group relative w-full text-left p-5 rounded-xl border transition-all duration-300 ease-out flex items-center justify-between
-                    ${isSelected 
-                      ? 'bg-white/5 border-autoforce-blue shadow-[0_0_20px_rgba(20,64,255,0.2)] translate-x-1' 
-                      : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-                    }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-300
-                      ${isSelected ? 'bg-autoforce-blue border-autoforce-blue' : 'border-gray-500 group-hover:border-white'}`}>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <span className={`text-lg font-medium transition-colors ${isSelected ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
-                      {option.label}
+          {question.type === 'text' ? (
+            <div className="space-y-6">
+              {question.id === 'site_cliente' && (
+              <div className="rounded-xl border border-autoforce-yellow/50 bg-autoforce-yellow/5 p-3.5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-autoforce-yellow mt-0.5" />
+                  <div>
+                    <span className="inline-flex items-center rounded-full border border-autoforce-yellow/50 bg-autoforce-yellow/10 px-2 py-0.5 text-[11px] font-bold tracking-widest text-autoforce-yellow mb-2">
+                      IMPORTANTE
                     </span>
+                    <p className="text-sm text-gray-200 leading-relaxed">
+                      Confira com atenção se este e o site oficial correto da empresa. Um link errado compromete todo o diagnostico.
+                    </p>
                   </div>
-                  {isSelected && <Zap className="w-5 h-5 text-autoforce-yellow animate-pulse" />}
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+              )}
+
+              <input
+                type="text"
+                value={answers[question.id] || ''}
+                onChange={(e) => {
+                  const nextValue = question.id === 'ticket_medio'
+                    ? formatCurrencyInput(e.target.value)
+                    : e.target.value;
+                  setAnswers(prev => ({ ...prev, [question.id]: nextValue }));
+                }}
+                placeholder={question.placeholder || "Ex.: www.suaempresa.com.br"}
+                className="w-full bg-black/30 border border-white/15 rounded-xl px-4 py-4 text-white text-lg focus:outline-none focus:border-autoforce-blue focus:shadow-[0_0_15px_rgba(20,64,255,0.2)]"
+                autoFocus
+              />
+              <div className="mt-2 rounded-xl border border-autoforce-blue/20 bg-autoforce-blue/5 p-3">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-4 h-4 text-autoforce-blue mt-0.5" />
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Seus dados e informacoes ficam protegidos conforme nossas politicas de privacidade e seguranca.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(question.options || []).map((option) => {
+                // Logica de selecao (Single vs Multi)
+                const isSelected =
+                  question.type === 'multi-max-2' || question.type === 'multi-unlimited'
+                    ? (answers[question.id] || []).includes(option.value)
+                    : answers[question.id] === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => handleSelect(question.id, option.value, question.type)}
+                    className={"group relative w-full text-left p-5 rounded-xl border transition-all duration-300 ease-out flex items-center justify-between " +
+                      (isSelected
+                        ? "bg-white/5 border-autoforce-blue shadow-[0_0_20px_rgba(20,64,255,0.2)] translate-x-1"
+                        : "bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10")}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={"w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-300 " +
+                        (isSelected ? "bg-autoforce-blue border-autoforce-blue" : "border-gray-500 group-hover:border-white")}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <span className={"text-lg font-medium transition-colors " + (isSelected ? "text-white" : "text-gray-300 group-hover:text-white")}>
+                        {option.label}
+                      </span>
+                    </div>
+                    {isSelected && <Zap className="w-5 h-5 text-autoforce-yellow animate-pulse" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* --- CAMPO OUTROS (Se selecionado em Métricas) --- */}
           {showOtherInput && (
