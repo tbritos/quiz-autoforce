@@ -6,7 +6,7 @@ import {
   Zap, RefreshCw, Lock, ArrowRight, User, Mail, Phone, 
   Building2, Briefcase, Globe, 
   CheckCircle2,
-  Download, Loader2
+  Download, Bot, Loader2
 } from 'lucide-react';
 
 function Resultado() {
@@ -530,10 +530,10 @@ function Resultado() {
       tagColor: "bg-autoforce-yellow/10 text-autoforce-yellow border border-autoforce-yellow/20",
       urgency: "Automação Recomendada",
       msg: "Para crescer sua operação sem inchar a equipe, a melhor estratégia hoje é Inteligência Artificial. Conheça a Lara, que atende seus leads 24h.",
-      ctaTitle: "Falar com Especialista AutoForce",
-      ctaSub: "Plano estratégico em uma conversa",
-      ctaLink: "https://linkforce.cc/diagnostico_sdr",
-      ctaIcon: Zap,
+      ctaTitle: "Conhecer Lara (IA de Vendas)",
+      ctaSub: "Ver demonstração interativa",
+      ctaLink: "https://linkforce.cc/diagnostico_lara",
+      ctaIcon: Bot,
       buttonStyle: "bg-autoforce-blue text-white hover:bg-white hover:text-autoforce-blue"
     };
   };
